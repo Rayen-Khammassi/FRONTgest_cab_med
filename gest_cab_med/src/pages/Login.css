@@ -1,0 +1,783 @@
+
+/* =========================================
+   1. GLOBAL AUTHENTICATION BACKGROUND
+========================================= */
+
+.auth-page {
+    --accent: #20d6c1;
+    --accent-blue: #1678ee;
+
+    position: relative;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    isolation: isolate;
+    color: white;
+    font-family: "Segoe UI", Arial, sans-serif;
+
+    background: linear-gradient(
+        -45deg,
+        #063b78,
+        #087eaa,
+        #08b99e,
+        #075e91,
+        #13a9b5,
+        #063b78
+    );
+
+    background-size: 400% 400%;
+    animation: gradientFlow 18s ease infinite;
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    25% {
+        background-position: 50% 100%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    75% {
+        background-position: 50% 0%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Subtle gradient changes according to role */
+
+.auth-page.role-docteur {
+    --accent: #45e0c5;
+
+    background:
+        radial-gradient(ellipse at 85% 20%, rgba(45, 239, 195, 0.5), transparent 40%),
+        radial-gradient(ellipse at 15% 80%, rgba(40, 135, 240, 0.4), transparent 42%),
+        linear-gradient(125deg, #063b78, #087eaa 52%, #0ab89b);
+}
+
+.auth-page.role-secretaire {
+    --accent: #69e5c7;
+
+    background:
+        radial-gradient(ellipse at 85% 20%, rgba(65, 220, 210, 0.45), transparent 40%),
+        radial-gradient(ellipse at 15% 80%, rgba(55, 145, 250, 0.5), transparent 42%),
+        linear-gradient(125deg, #07366d, #087da8 52%, #119d9e);
+}
+
+/* =========================================
+   2. WELCOME TITLE ANIMATION
+========================================= */
+
+.brand {
+    position: absolute;
+    z-index: 10;
+
+    top: 50%;
+    left: 50%;
+
+    display: flex;
+    align-items: center;
+    gap: 18px;
+
+    transform: translate(-50%, -50%);
+    text-align: center;
+    white-space: nowrap;
+
+    animation: welcomeFade 1.3s ease both;
+
+    transition:
+        top 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+        left 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+        gap 1.2s ease;
+}
+
+@keyframes welcomeFade {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 800;
+    letter-spacing: 5px;
+
+    text-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+
+    transition: font-size 1.2s ease, letter-spacing 1.2s ease;
+}
+
+.brand p {
+    margin: 10px 0 0;
+    font-size: 1.1rem;
+    opacity: 0.85;
+
+    transition: font-size 1.2s ease, margin 1.2s ease;
+}
+
+.brand-mark {
+    display: none;
+    font-size: 2.5rem;
+    color: #ffffff;
+}
+
+/* Final header position */
+
+.brand-small {
+    top: 45px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    gap: 12px;
+}
+
+.brand-small h1 {
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    letter-spacing: 3px;
+}
+
+.brand-small p {
+    font-size: 0.8rem;
+    margin-top: 3px;
+}
+
+.brand-small .brand-mark {
+    display: block;
+}
+
+/* =========================================
+   3. MEDICAL BACKGROUND ILLUSTRATIONS
+========================================= */
+
+.medical-scene {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+
+    opacity: 0;
+    animation: sceneAppear 1.5s ease 0.5s forwards;
+
+    transition: transform 1.2s ease;
+}
+
+@keyframes sceneAppear {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Floating light orbs */
+
+.medical-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 60px rgba(95, 255, 230, 0.2);
+    animation: floatOrb 8s ease-in-out infinite alternate;
+}
+
+.orb-one {
+    width: 240px;
+    height: 240px;
+    right: 12%;
+    top: 25%;
+}
+
+.orb-two {
+    width: 130px;
+    height: 130px;
+    right: 45%;
+    bottom: 10%;
+    animation-delay: 2s;
+}
+
+@keyframes floatOrb {
+    from {
+        transform: translateY(-15px);
+    }
+
+    to {
+        transform: translateY(25px);
+    }
+}
+
+/* Medical crosses */
+
+.medical-cross {
+    position: absolute;
+    color: #ff7777;
+    font-size: 65px;
+    font-weight: 900;
+
+    text-shadow:
+        0 5px 15px rgba(0, 0, 0, 0.2),
+        0 0 25px rgba(255, 100, 100, 0.4);
+
+    animation: floatingObject 6s ease-in-out infinite;
+}
+
+.cross-one {
+    top: 25%;
+    right: 15%;
+    transform: rotate(15deg);
+}
+
+.cross-two {
+    top: 65%;
+    right: 42%;
+    font-size: 35px;
+    animation-delay: 2s;
+}
+
+/* Floating capsules */
+
+.pill {
+    position: absolute;
+    width: 95px;
+    height: 38px;
+    border-radius: 30px;
+
+    background: linear-gradient(
+        90deg,
+        #ffffff 0%,
+        #e2f4ff 48%,
+        #38a9fa 50%,
+        #0874d5 100%
+    );
+
+    box-shadow:
+        inset 0 3px 6px rgba(255, 255, 255, 0.9),
+        0 12px 25px rgba(0, 30, 80, 0.3);
+
+    animation: floatingObject 7s ease-in-out infinite;
+}
+
+.pill-one {
+    top: 32%;
+    right: 38%;
+    transform: rotate(-30deg);
+}
+
+.pill-two {
+    bottom: 22%;
+    right: 12%;
+    transform: rotate(35deg);
+    animation-delay: 2s;
+}
+
+@keyframes floatingObject {
+    0%, 100% {
+        translate: 0 0;
+        rotate: 0deg;
+    }
+
+    50% {
+        translate: 12px -25px;
+        rotate: 12deg;
+    }
+}
+
+/* Right-side slogan */
+
+.medical-message {
+    position: absolute;
+    right: 12%;
+    bottom: 18%;
+
+    display: flex;
+    flex-direction: column;
+
+    font-size: clamp(1.5rem, 3vw, 3rem);
+    font-weight: 300;
+    font-style: italic;
+    text-align: center;
+
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+    animation: floatingObject 7s ease-in-out infinite;
+}
+
+.medical-message span:last-child {
+    color: #8affdf;
+}
+
+/* =========================================
+   4. GLASS AUTHENTICATION PANEL
+========================================= */
+
+.auth-panel {
+    position: absolute;
+    z-index: 5;
+
+    top: 50%;
+    left: 4%;
+
+    width: min(410px, 35vw);
+    max-height: calc(100vh - 155px);
+    overflow-y: auto;
+
+    padding: 30px;
+
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 25px;
+
+    background: rgba(255, 255, 255, 0.16);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+
+    box-shadow:
+        0 20px 60px rgba(0, 30, 80, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+
+    opacity: 0;
+
+    transform: translateY(-45%) translateX(-40px);
+
+    transition:
+        left 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.8s ease,
+        transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+        background 0.8s ease;
+}
+
+.auth-panel {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.auth-panel::-webkit-scrollbar {
+    display: none;
+}
+.auth-panel {
+    transform: translateX(-40px) translateY(-50%);
+}
+
+.auth-panel.panel-visible {
+    transform: translateX(0) translateY(-50%);
+}
+.auth-panel.panel-visible {
+    opacity: 1;
+    transform: translateY(-45%) translateX(0);
+}
+
+/* Patient = left */
+
+.role-patient .auth-panel {
+    left: 4%;
+}
+
+/* Doctor = middle */
+
+.role-docteur .auth-panel {
+    left: calc(50% - min(205px, 17.5vw));
+}
+
+/* Secretary = right */
+
+.role-secretaire .auth-panel {
+    left: calc(96% - min(410px, 35vw));
+}
+
+/* =========================================
+   5. PANEL HEADER
+========================================= */
+
+.panel-heading {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.panel-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 55px;
+    height: 55px;
+
+    border-radius: 18px;
+
+    font-size: 30px;
+    color: white;
+
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+
+    box-shadow: 0 8px 20px rgba(0, 40, 100, 0.15);
+}
+
+.panel-heading h2 {
+    font-size: 1.8rem;
+    margin: 12px 0 5px;
+    font-weight: 700;
+}
+
+.panel-heading p {
+    font-size: 0.9rem;
+    opacity: 0.85;
+    margin: 0;
+}
+
+/* =========================================
+   6. ROLE SELECTOR AND TABS
+========================================= */
+
+.role-selector,
+.auth-tabs {
+    display: flex;
+    gap: 7px;
+    margin-bottom: 20px;
+}
+
+.role-selector button,
+.auth-tabs button {
+    flex: 1;
+    min-width: 0;
+
+    padding: 11px 5px;
+
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, 0.13);
+    color: white;
+
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.3s ease,
+        color 0.3s ease,
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.role-selector button:hover,
+.auth-tabs button:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.role-selector button.selected,
+.auth-tabs button.selected {
+    background: linear-gradient(120deg, #0879f9, #09c7c0);
+    border-color: rgba(255, 255, 255, 0.7);
+
+    box-shadow: 0 5px 18px rgba(0, 100, 200, 0.3);
+}
+
+/* =========================================
+   7. FORM FIELDS
+========================================= */
+
+.auth-form {
+    animation: formAppear 0.45s ease both;
+}
+
+@keyframes formAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    margin-bottom: 7px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: white;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 13px 15px;
+
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+
+    outline: none;
+
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.17);
+
+    font-size: 0.9rem;
+
+    transition:
+        border 0.3s ease,
+        background 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.form-group input:focus {
+    border-color: #8affdf;
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 3px rgba(100, 255, 220, 0.13);
+}
+
+.form-group input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+/* =========================================
+   8. SUBMIT BUTTON
+========================================= */
+
+.submit-button {
+    width: 100%;
+    padding: 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 14px;
+
+    background: linear-gradient(110deg, #0879f9, #08c7b6);
+    color: white;
+
+    font-size: 1rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow: 0 8px 25px rgba(0, 80, 180, 0.25);
+
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        filter 0.3s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 80, 180, 0.35);
+    filter: brightness(1.1);
+}
+
+.submit-button:active {
+    transform: translateY(0);
+}
+
+/* =========================================
+   9. FOOTER
+========================================= */
+
+.panel-footer {
+    margin: 22px 0 0;
+    padding-top: 15px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* =========================================
+   10. RESPONSIVE DESIGN
+========================================= */
+
+@media (max-width: 900px) {
+    .auth-panel {
+        width: min(440px, 88vw);
+        left: 50% !important;
+        top: 53%;
+        transform: translate(-50%, -40%);
+    }
+
+    .auth-panel.panel-visible {
+        transform: translate(-50%, -50%);
+    }
+
+    .brand-small {
+        top: 25px;
+    }
+
+    .medical-message {
+        display: none;
+    }
+
+    .stethoscope {
+        right: 5%;
+        top: 18%;
+        opacity: 0.5;
+    }
+
+    .cross-one {
+        right: 8%;
+        top: 20%;
+    }
+}
+
+@media (max-width: 500px) {
+    .brand-small {
+        top: 20px;
+    }
+
+    .brand-small h1 {
+        font-size: 1.3rem;
+    }
+
+    .brand-small p {
+        font-size: 0.7rem;
+    }
+
+    .brand-mark {
+        font-size: 1.7rem;
+    }
+
+    .auth-panel {
+        padding: 22px;
+        max-height: calc(100vh - 105px);
+    }
+
+    .role-selector button,
+    .auth-tabs button {
+        font-size: 0.75rem;
+        padding: 10px 3px;
+    }
+
+    .panel-heading h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* =========================================
+   11. ACCESSIBILITY
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+.medical-decoration {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    opacity: 0.65;
+    filter: drop-shadow(0 12px 18px rgba(0, 25, 70, 0.25));
+
+    animation: medicalFloat 9s ease-in-out infinite;
+}
+
+.decoration-heart {
+    top: 18%;
+    left: 13%;
+    font-size: 65px;
+    color: #ff7189;
+    animation-delay: 1s;
+}
+
+.decoration-cross {
+    top: 45%;
+    left: 48%;
+    font-size: 55px;
+    color: #ff7777;
+    animation-delay: 3s;
+}
+
+.decoration-pill {
+    top: 12%;
+    right: 35%;
+    font-size: 55px;
+    animation-delay: 2s;
+}
+
+.decoration-plus {
+    bottom: 15%;
+    left: 12%;
+    font-size: 45px;
+    color: #b4fff0;
+    animation-delay: 4s;
+}
+
+.decoration-shield {
+    bottom: 12%;
+    right: 40%;
+    font-size: 65px;
+    animation-delay: 1.5s;
+}
+
+.decoration-heartbeat {
+    top: 65%;
+    right: 8%;
+    font-size: 65px;
+    color: #ff8ca5;
+    animation-delay: 2.5s;
+}
+
+.decoration-capsule {
+    top: 75%;
+    left: 35%;
+    font-size: 48px;
+    animation-delay: 3.5s;
+}
+
+.decoration-cross-two {
+    top: 12%;
+    right: 8%;
+    font-size: 40px;
+    color: #ffffff;
+    animation-delay: 5s;
+}
+
+@keyframes medicalFloat {
+    0%, 100% {
+        transform: translate3d(0, 0, 0) rotate(-8deg);
+    }
+
+    50% {
+        transform: translate3d(12px, -25px, 15px) rotate(8deg);
+    }
+}
+.stethoscope-icon {
+    position: absolute;
+    top: 25%;
+    right: 25%;
+    font-size: 110px;
+
+    filter: drop-shadow(0 12px 18px rgba(0, 25, 70, 0.3));
+
+    animation: medicalFloat 8s ease-in-out infinite;
+}
