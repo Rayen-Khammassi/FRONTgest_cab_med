@@ -11,7 +11,7 @@ function Login() {
     const [introFinished, setIntroFinished] = useState(false);
     const [role, setRole] = useState("PATIENT");
     const [mode, setMode] = useState("LOGIN");
-
+    const [isLoading, setIsLoading] = useState(false);
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
 
@@ -20,7 +20,10 @@ function Login() {
     const [email, setEmail] = useState("");
     const [dateNaissance, setDateNaissance] = useState("");
     const [adresse, setAdresse] = useState("");
-
+    const [feedback, setFeedback] = useState({
+        type: "",
+        message: "",
+    });
     useEffect(() => {
         const timer = setTimeout(() => {
             setIntroFinished(true);
@@ -36,60 +39,70 @@ function Login() {
         setPassword("");
     };
 
-const handleSubmit = async (event) => {
-    event.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
-    if (mode === "LOGIN") {
+        // Prevent multiple submissions
+        if (isLoading) return;
+
+        setIsLoading(true);
+        setFeedback({ type: "", message: "" });
+
         try {
-            const response = await fetch(
-                "http://localhost:8081/api/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        login: login,
-                        password: password,
-                    }),
+            if (mode === "LOGIN") {
+                const response = await fetch(
+                    "http://localhost:8081/api/auth/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ login, password }),
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    setFeedback({
+                        type: "error",
+                        message: data.message || "Identifiants incorrects.",
+                    });
+                    return;
                 }
-            );
 
-            const data = await response.json();
+                if (data.role !== role) {
+                    setFeedback({
+                        type: "error",
+                        message: "Ce compte ne correspond pas au rôle sélectionné.",
+                    });
+                    return;
+                }
 
-            if (!response.ok) {
-                alert(data.message || "Identifiants incorrects.");
-                return;
+                console.log("Connexion réussie :", data);
+
+                setFeedback({
+                    type: "success",
+                    message: `Bienvenue ${data.prenom} ${data.nom} !`,
+                });
+
+            } else {
+                console.log("Inscription demandée");
             }
-
-            // Verify that the account matches the selected role.
-            if (data.role !== role) {
-                alert("Ce compte ne correspond pas au rôle sélectionné.");
-                return;
-            }
-
-            console.log("Connexion réussie :", data);
-
-            alert(`Bienvenue ${data.prenom} ${data.nom} !`);
 
         } catch (error) {
-            console.error("Erreur de connexion :", error);
-            alert("Impossible de contacter le serveur. Vérifiez que le backend est démarré.");
-        }
+            console.error("Erreur :", error);
 
-    } else {
-        console.log("Inscription demandée", {
-            nom,
-            prenom,
-            email,
-            login,
-            password,
-            dateNaissance,
-            adresse,
-        });
-    }
-};
-    
+            setFeedback({
+                type: "error",
+                message: "Impossible de contacter le serveur. Vérifiez votre connexion.",
+            });
+
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
 
     return (
         <main className={`auth-page ${introFinished ? "intro-finished" : ""} role-${role.toLowerCase()}`}>
@@ -188,6 +201,15 @@ const handleSubmit = async (event) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
+                    {feedback.message && (
+                        <div
+                            className={`auth-feedback ${feedback.type}`}
+                            role="status"
+                            aria-live="polite"
+                        >
+                            {feedback.message}
+                        </div>
+                    )}
 
                     {mode === "REGISTER" && (
                         <>
@@ -278,9 +300,15 @@ const handleSubmit = async (event) => {
                         />
                     </div>
 
-                    <button className="submit-button" type="submit">
-                        {mode === "LOGIN" ? "Se connecter" : "Créer mon compte"}
-                        <span aria-hidden="true"> →</span>
+                    <button
+                        className="submit-button"
+                        type="submit"
+                        disabled={isLoading}>
+                        {isLoading
+                            ? (mode === "LOGIN" ? "Connexion en cours..." : "Création en cours...")
+                            : (mode === "LOGIN" ? "Se connecter" : "Créer mon compte")
+                        }
+                        {!isLoading && <span aria-hidden="true"> →</span>}
                     </button>
                 </form>
 
