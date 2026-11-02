@@ -39,10 +39,10 @@ function Login() {
         setPassword("");
     };
 
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        // Prevent multiple submissions
         if (isLoading) return;
 
         setIsLoading(true);
@@ -50,6 +50,7 @@ function Login() {
 
         try {
             if (mode === "LOGIN") {
+                // LOGIN
                 const response = await fetch(
                     "http://localhost:8081/api/auth/login",
                     {
@@ -87,7 +88,52 @@ function Login() {
                 });
 
             } else {
-                console.log("Inscription demandée");
+                // PATIENT REGISTRATION
+                const response = await fetch(
+                    "http://localhost:8081/api/auth/register",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            nom,
+                            prenom,
+                            email,
+                            login,
+                            password,
+                            dateNaissance,
+                            adresse,
+                        }),
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    setFeedback({
+                        type: "error",
+                        message: data.message || "Erreur lors de l'inscription.",
+                    });
+                    return;
+                }
+
+                setFeedback({
+                    type: "success",
+                    message: "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
+                });
+
+                // Clear registration fields
+                setNom("");
+                setPrenom("");
+                setEmail("");
+                setLogin("");
+                setPassword("");
+                setDateNaissance("");
+                setAdresse("");
+
+                // Return to login mode
+                setMode("LOGIN");
             }
 
         } catch (error) {
@@ -102,6 +148,7 @@ function Login() {
             setIsLoading(false);
         }
     };
+
 
 
     return (
