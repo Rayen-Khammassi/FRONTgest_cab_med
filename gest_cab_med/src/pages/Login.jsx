@@ -36,60 +36,96 @@ function Login() {
         setPassword("");
     };
 
-const handleSubmit = async (event) => {
-    event.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
 
-    if (mode === "LOGIN") {
+        if (mode === "LOGIN") {
+            try {
+                const response = await fetch(
+                    "http://localhost:8082/api/auth/login",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            login,
+                            password
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    alert(data.message || "Identifiants incorrects.");
+                    return;
+                }
+
+                if (data.role !== role) {
+                    alert(
+                        "Ce compte ne correspond pas au rôle sélectionné."
+                    );
+                    return;
+                }
+
+                alert(`Bienvenue ${data.prenom} ${data.nom} !`);
+
+            } catch (error) {
+                console.error("Erreur de connexion :", error);
+                alert("Impossible de contacter le serveur.");
+            }
+
+            return;
+        }
+
+        // INSCRIPTION PATIENT
+        if (role !== "PATIENT") {
+            alert("L'inscription est réservée aux patients.");
+            return;
+        }
+
         try {
             const response = await fetch(
-                "http://localhost:8081/api/auth/login",
+                "http://localhost:8082/api/auth/register",
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        login: login,
-                        password: password,
-                    }),
+                        nom,
+                        prenom,
+                        email,
+                        login,
+                        password,
+                        dateNaissance,
+                        adresse
+                    })
                 }
             );
 
             const data = await response.json();
 
             if (!response.ok) {
-                alert(data.message || "Identifiants incorrects.");
+                alert(
+                    data.message || "Erreur lors de l'inscription."
+                );
                 return;
             }
 
-            // Verify that the account matches the selected role.
-            if (data.role !== role) {
-                alert("Ce compte ne correspond pas au rôle sélectionné.");
-                return;
-            }
+            alert(
+                "Votre compte patient a été créé. Connectez-vous."
+            );
 
-            console.log("Connexion réussie :", data);
-
-            alert(`Bienvenue ${data.prenom} ${data.nom} !`);
+            setPassword("");
+            setMode("LOGIN");
 
         } catch (error) {
-            console.error("Erreur de connexion :", error);
-            alert("Impossible de contacter le serveur. Vérifiez que le backend est démarré.");
+            console.error("Erreur d'inscription :", error);
+            alert("Impossible de contacter le serveur Java.");
         }
-
-    } else {
-        console.log("Inscription demandée", {
-            nom,
-            prenom,
-            email,
-            login,
-            password,
-            dateNaissance,
-            adresse,
-        });
-    }
-};
-    
+    };
 
     return (
         <main className={`auth-page ${introFinished ? "intro-finished" : ""} role-${role.toLowerCase()}`}>
