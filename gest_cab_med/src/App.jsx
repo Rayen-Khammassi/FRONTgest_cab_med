@@ -1,9 +1,13 @@
+import { useState } from "react";
 import Login from "./pages/Login";
-import MedicamentPage from "./features/medicament/pages/MedicamentPage.jsx";
+import MedicamentPage from "./features/medicament/pages/MedicamentPage";
 
-function App() {
-    return <MedicamentPage />;
+export default function App() {
+    const [user, setUser] = useState(null);
 
+    if (user?.role === "DOCTEUR") {
+        return <MedicamentPage />;
+    }
+
+    return <Login onLogin={setUser} />;
 }
-
-export default App;

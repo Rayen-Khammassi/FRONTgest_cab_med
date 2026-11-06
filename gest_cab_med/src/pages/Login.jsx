@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import "./Login.css";
 
@@ -7,11 +8,11 @@ const roles = [
     { id: "SECRETAIRE", label: "Secrétaire" },
 ];
 
-function Login() {
+function Login({ onLogin }) {
     const [introFinished, setIntroFinished] = useState(false);
     const [role, setRole] = useState("PATIENT");
     const [mode, setMode] = useState("LOGIN");
-
+    const [isLoading, setIsLoading] = useState(false);
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
 
@@ -20,7 +21,10 @@ function Login() {
     const [email, setEmail] = useState("");
     const [dateNaissance, setDateNaissance] = useState("");
     const [adresse, setAdresse] = useState("");
-
+    const [feedback, setFeedback] = useState({
+        type: "",
+        message: "",
+    });
     useEffect(() => {
         const timer = setTimeout(() => {
             setIntroFinished(true);
@@ -36,96 +40,124 @@ function Login() {
         setPassword("");
     };
 
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (mode === "LOGIN") {
-            try {
+        if (isLoading) return;
+
+        setIsLoading(true);
+        setFeedback({ type: "", message: "" });
+
+        try {
+            if (mode === "LOGIN") {
+                // LOGIN
                 const response = await fetch(
                     "http://localhost:8082/api/auth/login",
                     {
                         method: "POST",
                         headers: {
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/json",
                         },
-                        body: JSON.stringify({
-                            login,
-                            password
-                        })
+                        body: JSON.stringify({ login, password }),
                     }
                 );
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    alert(data.message || "Identifiants incorrects.");
+                    setFeedback({
+                        type: "error",
+                        message: data.message || "Identifiants incorrects.",
+                    });
                     return;
                 }
 
                 if (data.role !== role) {
-                    alert(
-                        "Ce compte ne correspond pas au rôle sélectionné."
-                    );
+                    setFeedback({
+                        type: "error",
+                        message: "Ce compte ne correspond pas au rôle sélectionné.",
+                    });
                     return;
                 }
 
-                alert(`Bienvenue ${data.prenom} ${data.nom} !`);
+                console.log("Connexion réussie :", data);
 
-            } catch (error) {
-                console.error("Erreur de connexion :", error);
-                alert("Impossible de contacter le serveur.");
-            }
-
-            return;
-        }
-
-        // INSCRIPTION PATIENT
-        if (role !== "PATIENT") {
-            alert("L'inscription est réservée aux patients.");
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                "http://localhost:8082/api/auth/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        nom,
-                        prenom,
-                        email,
-                        login,
-                        password,
-                        dateNaissance,
-                        adresse
-                    })
+                // Afficher MedicamentPage pour un compte médecin.
+                if (data.role === "DOCTEUR") {
+                    onLogin(data);
+                    return;
                 }
-            );
 
-            const data = await response.json();
+                // Comportement actuel conservé pour les autres rôles.
+                setFeedback({
+                    type: "success",
+                    message: `Bienvenue ${data.prenom} ${data.nom} !`,
+                });
 
-            if (!response.ok) {
-                alert(
-                    data.message || "Erreur lors de l'inscription."
+            } else {
+                // PATIENT REGISTRATION
+                const response = await fetch(
+                    "http://localhost:8082/api/auth/register",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            nom,
+                            prenom,
+                            email,
+                            login,
+                            password,
+                            dateNaissance,
+                            adresse,
+                        }),
+                    }
                 );
-                return;
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    setFeedback({
+                        type: "error",
+                        message: data.message || "Erreur lors de l'inscription.",
+                    });
+                    return;
+                }
+
+                setFeedback({
+                    type: "success",
+                    message: "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
+                });
+
+                // Clear registration fields
+                setNom("");
+                setPrenom("");
+                setEmail("");
+                setLogin("");
+                setPassword("");
+                setDateNaissance("");
+                setAdresse("");
+
+                // Return to login mode
+                setMode("LOGIN");
             }
-
-            alert(
-                "Votre compte patient a été créé. Connectez-vous."
-            );
-
-            setPassword("");
-            setMode("LOGIN");
 
         } catch (error) {
-            console.error("Erreur d'inscription :", error);
-            alert("Impossible de contacter le serveur Java.");
+            console.error("Erreur :", error);
+
+            setFeedback({
+                type: "error",
+                message: "Impossible de contacter le serveur. Vérifiez votre connexion.",
+            });
+
+        } finally {
+            setIsLoading(false);
         }
     };
+
+
 
     return (
         <main className={`auth-page ${introFinished ? "intro-finished" : ""} role-${role.toLowerCase()}`}>
@@ -224,6 +256,15 @@ function Login() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
+                    {feedback.message && (
+                        <div
+                            className={`auth-feedback ${feedback.type}`}
+                            role="status"
+                            aria-live="polite"
+                        >
+                            {feedback.message}
+                        </div>
+                    )}
 
                     {mode === "REGISTER" && (
                         <>
@@ -314,9 +355,15 @@ function Login() {
                         />
                     </div>
 
-                    <button className="submit-button" type="submit">
-                        {mode === "LOGIN" ? "Se connecter" : "Créer mon compte"}
-                        <span aria-hidden="true"> →</span>
+                    <button
+                        className="submit-button"
+                        type="submit"
+                        disabled={isLoading}>
+                        {isLoading
+                            ? (mode === "LOGIN" ? "Connexion en cours..." : "Création en cours...")
+                            : (mode === "LOGIN" ? "Se connecter" : "Créer mon compte")
+                        }
+                        {!isLoading && <span aria-hidden="true"> →</span>}
                     </button>
                 </form>
 
