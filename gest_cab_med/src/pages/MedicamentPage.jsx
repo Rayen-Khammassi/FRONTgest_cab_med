@@ -168,7 +168,7 @@ export default function MedicamentPage() {
                 {/* Intro summary stat card */}
                 <div className="medicaments-stats-bar">
                     <div className="medicaments-summary-text">
-                        <span className="app-badge badge-primary">CATALOGUE OFFICIEL (PORT 8082)</span>
+                        <span className="app-badge badge-primary">CATALOGUE OFFICIEL</span>
                         <p style={{ margin: "6px 0 0", color: "var(--app-text-muted)", fontSize: "0.9rem" }}>
                             Gérez les références du cabinet médical. Toutes les entrées sont instantanément disponibles pour les ordonnances.
                         </p>
