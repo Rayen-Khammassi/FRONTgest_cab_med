@@ -1,5 +1,8 @@
+const API_BASE = (
+    import.meta.env.VITE_MAIN_API_URL || "http://localhost:8081"
+).replace(/\/$/, "");
 
-const API_URL = "http://localhost:8081/api/auth";
+const API_URL = `${API_BASE}/api/auth`;
 
 export async function loginUser(login, password) {
     const response = await fetch(`${API_URL}/login`, {

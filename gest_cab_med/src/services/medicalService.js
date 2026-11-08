@@ -1,5 +1,5 @@
 /**
- * GESTCABMED — Medical Cabinet Service (Patients, Consultations, Ordonnances)
+ * AL-ZAHRAOUI — Medical Cabinet Service (Patients, Consultations, Ordonnances)
  * Connects to port 8081 backend API.
  */
 
@@ -10,7 +10,7 @@ const API_BASE = (
 async function request(path, options = {}) {
     const url = `${API_BASE}${path}`;
     const headers = {
-        "Content-Type": "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
         ...(options.headers || {})
     };
 
@@ -58,6 +58,12 @@ export async function togglePatientStatus(id, actif) {
     return request(`/api/patients/${id}`, {
         method: "PUT",
         body: JSON.stringify({ actif })
+    });
+}
+
+export async function deletePatient(id) {
+    return request(`/api/patients/${id}`, {
+        method: "DELETE"
     });
 }
 

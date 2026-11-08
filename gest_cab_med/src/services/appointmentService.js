@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:8081/api";
+const API_BASE = (
+    import.meta.env.VITE_MAIN_API_URL || "http://localhost:8081"
+).replace(/\/$/, "") + "/api";
 
 /**
  * Récupère la liste de tous les médecins du cabinet.
@@ -10,19 +12,20 @@ export async function getDoctors() {
             throw new Error(`Erreur serveur (${response.status})`);
         }
         return await response.json();
-    } catch {
+    } catch (err) {
+        console.error("[appointmentService] Erreur lors de la récupération des médecins:", err);
         return [];
     }
 }
 
 /**
- * Crée une nouvelle demande de rendez-vous pour un patient.
+ * Crée une nouvelle demande de rendez-vous pour un patient ou directement confirmé par le secrétariat.
  */
-export async function createAppointment({ idPatient, idDocteur, dateHeure, motif }) {
+export async function createAppointment({ idPatient, idDocteur, dateHeure, motif, statut }) {
     const response = await fetch(`${API_BASE}/appointments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idPatient, idDocteur, dateHeure, motif }),
+        body: JSON.stringify({ idPatient, idDocteur, dateHeure, motif, statut }),
     });
 
     const data = await response.json();
@@ -40,7 +43,8 @@ export async function getAppointmentsByPatient(patientId) {
         const response = await fetch(`${API_BASE}/appointments?patient_id=${patientId}`);
         if (!response.ok) return [];
         return await response.json();
-    } catch {
+    } catch (err) {
+        console.error("[appointmentService] Erreur appointments patient:", err);
         return [];
     }
 }
@@ -53,7 +57,8 @@ export async function getAppointmentsByDoctor(doctorId) {
         const response = await fetch(`${API_BASE}/appointments?doctor_id=${doctorId}`);
         if (!response.ok) return [];
         return await response.json();
-    } catch {
+    } catch (err) {
+        console.error("[appointmentService] Erreur appointments docteur:", err);
         return [];
     }
 }
@@ -66,7 +71,8 @@ export async function getAllAppointments() {
         const response = await fetch(`${API_BASE}/appointments`);
         if (!response.ok) return [];
         return await response.json();
-    } catch {
+    } catch (err) {
+        console.error("[appointmentService] Erreur all appointments:", err);
         return [];
     }
 }
