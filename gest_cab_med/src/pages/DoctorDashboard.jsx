@@ -37,7 +37,8 @@ import {
     IconUser,
     IconPrint,
     IconAlert,
-    IconArrowLeft
+    IconArrowLeft,
+    LogoAlZahraoui
 } from "../components/MedicalIcons";
 import NotificationToast from "../components/NotificationToast";
 
@@ -1329,9 +1330,14 @@ function DoctorDashboard() {
                 <div className="modal-overlay" onClick={() => setPrintPrescription(null)}>
                     <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ background: "#ffffff", color: "#1f2937", maxWidth: "620px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #0879f9", paddingBottom: "14px", marginBottom: "20px" }}>
-                            <div>
-                                <h2 style={{ margin: 0, color: "#0879f9", fontSize: "1.4rem", letterSpacing: "1px" }}>CABINET MÉDICAL GESTCABMED</h2>
-                                <p style={{ margin: "3px 0 0", fontSize: "0.85rem", color: "#4b5563" }}>Dr. {user?.prenom} {user?.nom} — Médecine Générale &amp; Spécialisée</p>
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                <div style={{ color: "#0879f9" }}>
+                                    <LogoAlZahraoui size={38} />
+                                </div>
+                                <div>
+                                    <h2 style={{ margin: 0, color: "#0879f9", fontSize: "1.4rem", letterSpacing: "1px" }}>CABINET MÉDICAL AL-ZAHRAOUI</h2>
+                                    <p style={{ margin: "3px 0 0", fontSize: "0.85rem", color: "#4b5563" }}>Dr. {user?.prenom} {user?.nom} — Médecine Générale &amp; Spécialisée</p>
+                                </div>
                             </div>
                             <button
                                 type="button"

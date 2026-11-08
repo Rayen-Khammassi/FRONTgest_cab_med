@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, logoutUser } from "../services/authService";
 import {
-    IconMedicineCabinet,
+    LogoAlZahraoui,
     IconCabinetHome,
     IconAppointmentCalendar,
     IconRequestAppointment,
@@ -82,11 +82,11 @@ function DashboardLayout({ role, title, subtitle, children }) {
             <aside className={`dashboard-sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
                 <div className="sidebar-brand">
                     <div className="brand-icon">
-                        <IconMedicineCabinet size={24} />
+                        <LogoAlZahraoui size={30} />
                     </div>
                     <div>
-                        <h2>GESTCABMED</h2>
-                        <span>Medical Cabinet</span>
+                        <h2>Al-Zahraoui</h2>
+                        <span>Cabinet Médical</span>
                     </div>
                 </div>
 
@@ -152,7 +152,7 @@ function DashboardLayout({ role, title, subtitle, children }) {
                                 {roleNames[role]}
                             </span>
                             <span className="topbar-breadcrumb">
-                                GESTCABMED / Tableau de bord
+                                Al-Zahraoui / Tableau de bord
                             </span>
                         </div>
                     </div>

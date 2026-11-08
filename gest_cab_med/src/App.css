@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap');
+
 /* =================================================================
-   GESTCABMED — THEME DASHBOARD (Luminous Apple Medical Glassmorphism)
-   Harmonisé avec Login.css : Verre givré lumineux, fond pastel azur/menthe,
-   typographie Apple SF Pro raffinée, contrastes cliniques parfaits.
+   AL-ZAHRAOUI — THEME DASHBOARD (Cabinet Médical Moderne & Luminous)
+   Harmonisé avec la marque Al-Zahraoui, typographie Plus Jakarta Sans,
+   verre givré lumineux, contrastes cliniques de haute précision.
    ================================================================= */
 
 :root {
@@ -27,7 +29,8 @@
     --shadow-soft: 0 20px 50px rgba(35, 91, 116, 0.09), 0 4px 15px rgba(35, 91, 116, 0.04);
     --shadow-hover: 0 26px 65px rgba(35, 91, 116, 0.15), 0 6px 20px rgba(8, 127, 158, 0.1);
     --shadow-cta: 0 10px 25px rgba(2, 132, 199, 0.35);
-    --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-display: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-apple: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --sidebar-width: 270px;
     --radius-outer: 24px;
@@ -166,15 +169,17 @@
 }
 
 .brand-icon {
-    width: 46px;
-    height: 46px;
-    display: grid;
-    place-items: center;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #087fa5, #16c4aa);
-    box-shadow: 0 8px 20px rgba(8, 127, 165, 0.22);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%);
+    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.28);
     color: #ffffff;
-    font-weight: bold;
+    padding: 7px;
+    flex-shrink: 0;
 }
 
 .sidebar-brand h2 {
@@ -1190,10 +1195,24 @@ svg {
     font-style: normal;
 }
 
-/* 2. Headline Wrapping & Specific Typography */
-h1, h2, h3, h4, .section-title, .banner-label {
+/* 2. Headline Wrapping & Modern Typography (Plus Jakarta Sans) */
+h1, h2, h3, h4, h5, h6,
+.section-title,
+.banner-label,
+.sidebar-brand h2,
+.welcome-banner h2,
+.dashboard-heading h1,
+.modal-header h3,
+.service-card h3 {
+    font-family: var(--font-display) !important;
     text-wrap: balance;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+}
+
+.sidebar-brand h2 {
+    font-weight: 800;
+    letter-spacing: -0.01em;
 }
 
 /* 3. Mono font ONLY where strictly needed (IDs, codes, hashes) */
