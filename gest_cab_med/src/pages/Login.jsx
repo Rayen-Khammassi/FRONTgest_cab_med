@@ -1,17 +1,13 @@
+
 import { useEffect, useState } from "react";
 import "./Login.css";
-
-const roles = [
-    { id: "PATIENT", label: "Patient" },
-    { id: "DOCTEUR", label: "Médecin" },
-    { id: "SECRETAIRE", label: "Secrétaire" },
-];
-
+import { useNavigate } from "react-router-dom";
+import { loginUser, saveUser } from "../services/authService";
 function Login() {
     const [introFinished, setIntroFinished] = useState(false);
-    const [role, setRole] = useState("PATIENT");
     const [mode, setMode] = useState("LOGIN");
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
 
@@ -20,25 +16,24 @@ function Login() {
     const [email, setEmail] = useState("");
     const [dateNaissance, setDateNaissance] = useState("");
     const [adresse, setAdresse] = useState("");
+
     const [feedback, setFeedback] = useState({
         type: "",
         message: "",
     });
+
     useEffect(() => {
         const timer = setTimeout(() => {
             setIntroFinished(true);
-        }, 2600);
+        }, 150);
 
         return () => clearTimeout(timer);
     }, []);
 
-    const changeRole = (newRole) => {
-        setRole(newRole);
-        setMode("LOGIN");
-        setLogin("");
-        setPassword("");
+    const changeMode = (newMode) => {
+        setMode(newMode);
+        setFeedback({ type: "", message: "" });
     };
-
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -50,45 +45,28 @@ function Login() {
 
         try {
             if (mode === "LOGIN") {
-                // LOGIN
-                const response = await fetch(
-                    "http://localhost:8081/api/auth/login",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ login, password }),
-                    }
-                );
 
-                const data = await response.json();
+                const data = await loginUser(login, password);
 
-                if (!response.ok) {
-                    setFeedback({
-                        type: "error",
-                        message: data.message || "Identifiants incorrects.",
-                    });
-                    return;
+                // Save authenticated user
+                saveUser(data);
+
+                // Redirect according to the role
+                const routes = {
+                    PATIENT: "/patient",
+                    DOCTEUR: "/doctor",
+                    SECRETAIRE: "/secretary",
+                };
+
+                const destination = routes[data.role];
+
+                if (!destination) {
+                    throw new Error("Rôle utilisateur non reconnu.");
                 }
 
-                if (data.role !== role) {
-                    setFeedback({
-                        type: "error",
-                        message: "Ce compte ne correspond pas au rôle sélectionné.",
-                    });
-                    return;
-                }
-
-                console.log("Connexion réussie :", data);
-
-                setFeedback({
-                    type: "success",
-                    message: `Bienvenue ${data.prenom} ${data.nom} !`,
-                });
+                navigate(destination, { replace: true });
 
             } else {
-                // PATIENT REGISTRATION
                 const response = await fetch(
                     "http://localhost:8081/api/auth/register",
                     {
@@ -123,7 +101,6 @@ function Login() {
                     message: "Compte créé avec succès ! Vous pouvez maintenant vous connecter.",
                 });
 
-                // Clear registration fields
                 setNom("");
                 setPrenom("");
                 setEmail("");
@@ -132,7 +109,6 @@ function Login() {
                 setDateNaissance("");
                 setAdresse("");
 
-                // Return to login mode
                 setMode("LOGIN");
             }
 
@@ -141,7 +117,7 @@ function Login() {
 
             setFeedback({
                 type: "error",
-                message: "Impossible de contacter le serveur. Vérifiez votre connexion.",
+                message: error.message || "Impossible de contacter le serveur.",
             });
 
         } finally {
@@ -149,220 +125,220 @@ function Login() {
         }
     };
 
-
-
     return (
-        <main className={`auth-page ${introFinished ? "intro-finished" : ""} role-${role.toLowerCase()}`}>
+        <main className={`auth-page ${introFinished ? "intro-finished" : ""}`}>
 
-            {/* Animated welcome title */}
-            <header className={`brand ${introFinished ? "brand-small" : ""}`}>
-                <div className="brand-mark">✚</div>
-                <div>
-                    <h1>GESTCABMED</h1>
-                    <p>Système de gestion médicale</p>
-                </div>
-            </header>
+            {/* Background decoration */}
+            <div className="background-glow glow-one" />
+            <div className="background-glow glow-two" />
+            <div className="background-glow glow-three" />
 
-            {/* Floating medical illustrations */}
             <div className="medical-scene" aria-hidden="true">
-                <div className="medical-decoration decoration-heart">♥</div>
-                <div className="medical-decoration decoration-cross">✚</div>
-                <div className="medical-decoration decoration-pill">💊</div>
-                <div className="medical-decoration decoration-plus">✚</div>
-                <div className="medical-decoration decoration-star">★</div>
-                <div className="medical-decoration decoration-shield">🛡</div>
-                <div className="medical-decoration decoration-heartbeat">♡</div>
-                <div className="medical-decoration decoration-capsule">💊</div>
-                <div className="medical-decoration decoration-cross-two">✚</div>
-                <div className="medical-orb orb-one" />
-                <div className="medical-orb orb-two" />
-
-                <div className="medical-cross cross-one">✚</div>
-                <div className="medical-cross cross-two">✚</div>
-
-                <div className="pill pill-one">
-                    <span />
-                </div>
-
-                <div className="pill pill-two">
-                    <span />
-                </div>
-
-                <div className="medical-message">
-                    <span>Votre santé,</span>
-                    <span>notre priorité.</span>
-                </div>
-
-                <div className="stethoscope-icon" aria-hidden="true">
-                    🩺
-                </div>
+                <span className="medical-decoration decoration-heart">♥</span>
+                <span className="medical-decoration decoration-cross">✚</span>
+                <span className="medical-decoration decoration-pill">✚</span>
+                <span className="medical-decoration decoration-shield">♡</span>
+                <span className="medical-decoration decoration-capsule">✚</span>
+                <span className="medical-decoration decoration-cross-two">✚</span>
+                <span className="medical-orb orb-one" />
+                <span className="medical-orb orb-two" />
             </div>
 
-            {/* Authentication panel */}
-            <section className={`auth-panel ${introFinished ? "panel-visible" : ""}`}>
+            {/* Main content */}
+            <div className="auth-content">
 
-                <div className="panel-heading">
-                    <span className="panel-icon">✚</span>
-                    <h2>
-                        {mode === "LOGIN" ? "Connexion" : "Créer un compte"}
-                    </h2>
-                    <p>
-                        {mode === "LOGIN"
-                            ? "Accédez à votre espace personnel"
-                            : "Rejoignez notre espace patient"}
-                    </p>
-                </div>
+                <header className="brand">
+                    <div className="brand-mark">✚</div>
+                    <div>
+                        <h1>GESTCABMED</h1>
+                        <p>Système de gestion médicale</p>
+                    </div>
+                </header>
 
-                <div className="role-selector">
-                    {roles.map((item) => (
+                <section className={`auth-panel ${introFinished ? "panel-visible" : ""}`}>
+
+                    <div className="panel-heading">
+                        <div className="panel-icon">✚</div>
+
+                        <h2>
+                            {mode === "LOGIN"
+                                ? "Bienvenue"
+                                : "Créer un compte"}
+                        </h2>
+
+                        <p>
+                            {mode === "LOGIN"
+                                ? "Connectez-vous à votre espace personnel"
+                                : "Rejoignez notre espace patient"}
+                        </p>
+                    </div>
+
+                    {/* Animated tabs */}
+                    <div className={`auth-tabs ${mode === "REGISTER" ? "register-active" : ""}`}>
+                        <div className="tab-indicator" />
+
                         <button
-                            key={item.id}
                             type="button"
-                            className={role === item.id ? "selected" : ""}
-                            onClick={() => changeRole(item.id)}
-                            aria-pressed={role === item.id}
+                            className={mode === "LOGIN" ? "selected" : ""}
+                            onClick={() => changeMode("LOGIN")}
                         >
-                            {item.label}
+                            Connexion
                         </button>
-                    ))}
-                </div>
 
-                <div className="auth-tabs">
-                    <button
-                        type="button"
-                        className={mode === "LOGIN" ? "selected" : ""}
-                        onClick={() => setMode("LOGIN")}
-                    >
-                        Connexion
-                    </button>
-
-                    {role === "PATIENT" && (
                         <button
                             type="button"
                             className={mode === "REGISTER" ? "selected" : ""}
-                            onClick={() => setMode("REGISTER")}
+                            onClick={() => changeMode("REGISTER")}
                         >
                             Inscription
                         </button>
-                    )}
-                </div>
+                    </div>
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    {feedback.message && (
-                        <div
-                            className={`auth-feedback ${feedback.type}`}
-                            role="status"
-                            aria-live="polite"
-                        >
-                            {feedback.message}
+                    <form
+                        key={mode}
+                        onSubmit={handleSubmit}
+                        className="auth-form"
+                    >
+
+                        {feedback.message && (
+                            <div
+                                className={`auth-feedback ${feedback.type}`}
+                                role="status"
+                                aria-live="polite"
+                            >
+                                {feedback.message}
+                            </div>
+                        )}
+
+                        {mode === "REGISTER" && (
+                            <div className="registration-fields">
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label htmlFor="prenom">Prénom</label>
+                                        <input
+                                            id="prenom"
+                                            value={prenom}
+                                            onChange={(e) => setPrenom(e.target.value)}
+                                            autoComplete="given-name"
+                                            placeholder="Votre prénom"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label htmlFor="nom">Nom</label>
+                                        <input
+                                            id="nom"
+                                            value={nom}
+                                            onChange={(e) => setNom(e.target.value)}
+                                            autoComplete="family-name"
+                                            placeholder="Votre nom"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="email">Adresse e-mail</label>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        autoComplete="email"
+                                        placeholder="exemple@email.com"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="dateNaissance">Date de naissance</label>
+                                    <input
+                                        id="dateNaissance"
+                                        type="date"
+                                        value={dateNaissance}
+                                        onChange={(e) => setDateNaissance(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="adresse">Adresse</label>
+                                    <input
+                                        id="adresse"
+                                        value={adresse}
+                                        onChange={(e) => setAdresse(e.target.value)}
+                                        autoComplete="street-address"
+                                        placeholder="Votre adresse"
+                                        required
+                                    />
+                                </div>
+
+                            </div>
+                        )}
+
+                        <div className="form-group">
+                            <label htmlFor="login">Identifiant</label>
+                            <input
+                                id="login"
+                                value={login}
+                                onChange={(e) => setLogin(e.target.value)}
+                                autoComplete="username"
+                                placeholder="Votre identifiant"
+                                required
+                            />
                         </div>
-                    )}
 
-                    {mode === "REGISTER" && (
-                        <>
-                            <div className="form-group">
-                                <label htmlFor="prenom">Prénom</label>
-                                <input
-                                    id="prenom"
-                                    value={prenom}
-                                    onChange={(e) => setPrenom(e.target.value)}
-                                    autoComplete="given-name"
-                                    required
-                                />
-                            </div>
+                        <div className="form-group">
+                            <label htmlFor="password">Mot de passe</label>
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                autoComplete={
+                                    mode === "LOGIN"
+                                        ? "current-password"
+                                        : "new-password"
+                                }
+                                placeholder="Votre mot de passe"
+                                required
+                            />
+                        </div>
 
-                            <div className="form-group">
-                                <label htmlFor="nom">Nom</label>
-                                <input
-                                    id="nom"
-                                    value={nom}
-                                    onChange={(e) => setNom(e.target.value)}
-                                    autoComplete="family-name"
-                                    required
-                                />
-                            </div>
+                        <button
+                            className="submit-button"
+                            type="submit"
+                            disabled={isLoading}
+                        >
+                            <span>
+                                {isLoading
+                                    ? mode === "LOGIN"
+                                        ? "Connexion en cours..."
+                                        : "Création en cours..."
+                                    : mode === "LOGIN"
+                                        ? "Se connecter"
+                                        : "Créer mon compte"}
+                            </span>
 
-                            <div className="form-group">
-                                <label htmlFor="email">Adresse e-mail</label>
-                                <input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    autoComplete="email"
-                                    required
-                                />
-                            </div>
+                            {!isLoading && <span className="button-arrow">→</span>}
+                        </button>
 
-                            <div className="form-group">
-                                <label htmlFor="dateNaissance">
-                                    Date de naissance
-                                </label>
-                                <input
-                                    id="dateNaissance"
-                                    type="date"
-                                    value={dateNaissance}
-                                    onChange={(e) => setDateNaissance(e.target.value)}
-                                    required
-                                />
-                            </div>
+                    </form>
 
-                            <div className="form-group">
-                                <label htmlFor="adresse">Adresse</label>
-                                <input
-                                    id="adresse"
-                                    value={adresse}
-                                    onChange={(e) => setAdresse(e.target.value)}
-                                    autoComplete="street-address"
-                                    required
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    <div className="form-group">
-                        <label htmlFor="login">Identifiant</label>
-                        <input
-                            id="login"
-                            value={login}
-                            onChange={(e) => setLogin(e.target.value)}
-                            autoComplete="username"
-                            placeholder="Votre identifiant"
-                            required
-                        />
+                    <div className="panel-footer">
+                        <span className="footer-line" />
+                        <p>GESTCABMED · Votre santé, notre priorité</p>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="password">Mot de passe</label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            autoComplete={
-                                mode === "LOGIN" ? "current-password" : "new-password"
-                            }
-                            placeholder="Votre mot de passe"
-                            required
-                        />
-                    </div>
+                </section>
 
-                    <button
-                        className="submit-button"
-                        type="submit"
-                        disabled={isLoading}>
-                        {isLoading
-                            ? (mode === "LOGIN" ? "Connexion en cours..." : "Création en cours...")
-                            : (mode === "LOGIN" ? "Se connecter" : "Créer mon compte")
-                        }
-                        {!isLoading && <span aria-hidden="true"> →</span>}
-                    </button>
-                </form>
-
-                <p className="panel-footer">
-                    GESTCABMED · Votre santé, notre priorité
+                <p className="page-caption">
+                    Une gestion simple et sécurisée de votre santé.
                 </p>
-            </section>
+
+            </div>
         </main>
     );
 }

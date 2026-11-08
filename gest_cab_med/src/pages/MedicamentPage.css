@@ -1,0 +1,160 @@
+/* GESTCABMED — Module Médicaments
+   Design harmonisé avec DashboardLayout & App.css (Apple-inspired Glassmorphism).
+*/
+
+.medicaments-dashboard-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+}
+
+.medicaments-stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 24px;
+    border-radius: var(--app-radius-lg);
+    background: var(--app-glass-bg);
+    border: 1px solid var(--app-glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--app-shadow-card);
+    flex-wrap: wrap;
+}
+
+.medicaments-summary-text {
+    flex: 1;
+    min-width: 260px;
+}
+
+.medicaments-stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    border-radius: var(--app-radius-md);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--app-glass-border);
+    box-shadow: var(--app-shadow-sm);
+}
+
+.medicaments-stat-icon-wrap {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: var(--app-radius-sm);
+    background: rgba(8, 127, 165, 0.1);
+}
+
+.medicaments-stat-pill strong {
+    display: block;
+    font-size: 1.5rem;
+    color: var(--app-text-main);
+    line-height: 1.1;
+}
+
+.medicaments-stat-pill span {
+    font-size: 0.78rem;
+    color: var(--app-text-muted);
+}
+
+.medicaments-notice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--app-radius-md);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.medicaments-notice-info {
+    background: rgba(8, 127, 165, 0.12);
+    border: 1px solid rgba(8, 127, 165, 0.3);
+    color: #05536d;
+}
+
+.medicaments-notice-succes {
+    background: rgba(22, 196, 170, 0.15);
+    border: 1px solid rgba(22, 196, 170, 0.35);
+    color: #0b685a;
+}
+
+.medicaments-notice-erreur {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #991b1b;
+}
+
+.medicaments-notice-icone {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.medicaments-grille {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 960px) {
+    .medicaments-grille {
+        grid-template-columns: 1fr;
+    }
+}
+
+.medicaments-form-card {
+    background: var(--app-glass-bg);
+    border: 1px solid var(--app-glass-border);
+    border-radius: var(--app-radius-lg);
+    padding: 24px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--app-shadow-card);
+    height: fit-content;
+}
+
+.medicaments-form-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--app-text-main);
+}
+
+.med-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.medicaments-list-card {
+    background: var(--app-glass-bg);
+    border: 1px solid var(--app-glass-border);
+    border-radius: var(--app-radius-lg);
+    padding: 24px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--app-shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.medicaments-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.row-editing {
+    background: rgba(8, 127, 165, 0.08) !important;
+}
