@@ -3,9 +3,16 @@
 }
 
 html,
-body,
-#root {
+body {
     margin: 0;
+    padding: 0;
+    min-height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#root {
     min-height: 100%;
     width: 100%;
 }

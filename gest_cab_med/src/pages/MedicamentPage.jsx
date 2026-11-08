@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { medicamentApi } from "../services/medicamentApi";
 import { getUser } from "../services/authService";
 import DashboardLayout from "../components/DashboardLayout";
+import ConfirmModal from "../components/ConfirmModal";
 import {
     IconPills,
     IconPlus,
@@ -27,6 +28,7 @@ export default function MedicamentPage() {
     const [enregistrement, setEnregistrement] = useState(false);
     const [idSuppression, setIdSuppression] = useState(null);
     const [notification, setNotification] = useState(null);
+    const [medToDelete, setMedToDelete] = useState(null);
     const formulaireRef = useRef(null);
 
     const charger = useCallback(async (afficherChargement = true) => {
@@ -102,13 +104,10 @@ export default function MedicamentPage() {
         setNotification(null);
 
         try {
-            const enModification = idEdition !== null;
-            const payload = { nom, dosage };
-
-            if (enModification) {
-                await medicamentApi.update(idEdition, payload);
+            if (idEdition !== null) {
+                await medicamentApi.update(idEdition, { nom, dosage });
             } else {
-                await medicamentApi.create(payload);
+                await medicamentApi.create({ nom, dosage });
             }
 
             annulerEdition();
@@ -116,7 +115,7 @@ export default function MedicamentPage() {
             if (charge) {
                 setNotification({
                     type: "succes",
-                    texte: enModification
+                    texte: idEdition !== null
                         ? "Médicament modifié avec succès."
                         : "Médicament ajouté avec succès au catalogue."
                 });
@@ -128,18 +127,20 @@ export default function MedicamentPage() {
         }
     }
 
-    async function supprimer(medicament) {
-        const confirme = window.confirm(
-            `Supprimer « ${medicament.nom} » (${medicament.dosage}) de l'inventaire ?`
-        );
-        if (!confirme) return;
+    function supprimer(medicament) {
+        setMedToDelete(medicament);
+    }
 
-        setIdSuppression(medicament.idMedicament);
+    async function confirmerSuppression() {
+        if (!medToDelete) return;
+        const med = medToDelete;
+        setMedToDelete(null);
+        setIdSuppression(med.idMedicament);
         setNotification(null);
 
         try {
-            await medicamentApi.remove(medicament.idMedicament);
-            if (idEdition === medicament.idMedicament) {
+            await medicamentApi.remove(med.idMedicament);
+            if (idEdition === med.idMedicament) {
                 annulerEdition();
             }
             const charge = await charger(false);
@@ -161,116 +162,113 @@ export default function MedicamentPage() {
     return (
         <DashboardLayout
             role={userRole}
-            title="Pharmacie & Médicaments"
-            subtitle="Inventaire de la pharmacie, dosages et gestion des références médicales en temps réel."
+            title="Inventaire des Médicaments"
+            subtitle="Consultez, enregistrez et modifiez les dosages et spécialités pharmaceutiques disponibles au cabinet."
         >
-            <div className="medicaments-dashboard-wrapper">
-                {/* Intro summary stat card */}
-                <div className="medicaments-stats-bar">
-                    <div className="medicaments-summary-text">
-                        <span className="app-badge badge-primary">CATALOGUE OFFICIEL</span>
-                        <p style={{ margin: "6px 0 0", color: "var(--app-text-muted)", fontSize: "0.9rem" }}>
-                            Gérez les références du cabinet médical. Toutes les entrées sont instantanément disponibles pour les ordonnances.
-                        </p>
-                    </div>
-                    <div className="medicaments-stat-pill">
-                        <div className="medicaments-stat-icon-wrap">
-                            <IconPills size={22} />
-                        </div>
-                        <div>
-                            <strong className="font-tabular">{medicaments.length}</strong>
-                            <span>référence{medicaments.length !== 1 ? "s" : ""} active{medicaments.length !== 1 ? "s" : ""}</span>
-                        </div>
-                    </div>
-                </div>
+            <ConfirmModal
+                isOpen={Boolean(medToDelete)}
+                title="Supprimer un médicament"
+                message={`Êtes-vous certain de vouloir supprimer « ${medToDelete?.nom} » (${medToDelete?.dosage}) de l'inventaire ? Cette action est irréversible.`}
+                confirmText="Accepter"
+                cancelText="Annuler"
+                variant="danger"
+                onConfirm={confirmerSuppression}
+                onCancel={() => setMedToDelete(null)}
+            />
 
-                {/* Notifications */}
+            <div className="medicaments-conteneur">
                 {notification && (
-                    <div className={`medicaments-notice medicaments-notice-${notification.type}`} role="status">
-                        <span className="medicaments-notice-icone">
-                            {notification.type === "succes" && <IconCheck size={16} />}
-                            {notification.type === "erreur" && <IconClose size={16} />}
-                            {notification.type === "info" && <IconAlert size={16} />}
+                    <div
+                        className={`med-alerte ${notification.type === "succes" ? "med-alerte-succes" : "med-alerte-erreur"}`}
+                        role="status"
+                    >
+                        <span className="med-alerte-icone">
+                            {notification.type === "succes" ? <IconCheck size={18} /> : <IconAlert size={18} />}
                         </span>
-                        <span style={{ flex: 1, fontWeight: 500 }}>{notification.texte}</span>
+                        <span className="med-alerte-texte">{notification.texte}</span>
                         <button
                             type="button"
-                            className="btn-link"
+                            className="med-alerte-fermer"
                             onClick={() => setNotification(null)}
-                            style={{ background: "none", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
                             aria-label="Fermer la notification"
                         >
-                            <IconClose size={14} />
+                            <IconClose size={16} />
                         </button>
                     </div>
                 )}
 
-                {/* Main 2-column grid */}
                 <div className="medicaments-grille">
-                    {/* ── Formulaire d'ajout / modification ── */}
-                    <div ref={formulaireRef} className="medicaments-form-card">
-                        <form onSubmit={enregistrer} noValidate>
-                            <h3 className="medicaments-form-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span>{idEdition !== null ? <IconEdit size={18} /> : <IconPlus size={18} />}</span>
-                                {idEdition !== null ? "Modifier la référence" : "Ajouter un médicament"}
-                            </h3>
+                    {/* Colonne 1 : Formulaire d'ajout / modification */}
+                    <div className="medicaments-carte" ref={formulaireRef}>
+                        <div className="medicaments-carte-en-tete">
+                            <span className="medicaments-badge-icone">
+                                {idEdition !== null ? <IconEdit size={18} /> : <IconPlus size={18} />}
+                            </span>
+                            <div>
+                                <h3 className="medicaments-carte-titre">
+                                    {idEdition !== null ? "Modifier le médicament" : "Ajouter un médicament"}
+                                </h3>
+                                <p className="medicaments-carte-sous-titre">
+                                    {idEdition !== null
+                                        ? "Mettez à jour la dénomination et le dosage dans la base."
+                                        : "Enregistrez une nouvelle spécialité pharmaceutique."}
+                                </p>
+                            </div>
+                        </div>
 
-                            <div className="form-group" style={{ marginBottom: "16px" }}>
-                                <label className="form-label" htmlFor="med-nom">
-                                    Nom du médicament *
+                        <form onSubmit={enregistrer} className="medicaments-formulaire" noValidate>
+                            <div className="form-group">
+                                <label htmlFor="nom-medicament" className="form-label">
+                                    Dénomination commune (Nom) *
                                 </label>
                                 <input
-                                    id="med-nom"
+                                    id="nom-medicament"
                                     type="text"
                                     className="form-control"
-                                    placeholder="Ex: Paracétamol, Amoxicilline..."
+                                    placeholder="Ex : Paracétamol, Amoxicilline..."
                                     value={formulaire.nom}
-                                    onChange={(e) => setFormulaire((prev) => ({ ...prev, nom: e.target.value }))}
+                                    onChange={(e) => setFormulaire({ ...formulaire, nom: e.target.value })}
                                     disabled={enregistrement}
-                                    autoComplete="off"
+                                    required
                                 />
                             </div>
 
-                            <div className="form-group" style={{ marginBottom: "20px" }}>
-                                <label className="form-label" htmlFor="med-dosage">
-                                    Dosage & Forme *
+                            <div className="form-group">
+                                <label htmlFor="dosage-medicament" className="form-label">
+                                    Dosage &amp; Forme galénique *
                                 </label>
                                 <input
-                                    id="med-dosage"
+                                    id="dosage-medicament"
                                     type="text"
                                     className="form-control"
-                                    placeholder="Ex: 500 mg gélule, 1g cp effervescent..."
+                                    placeholder="Ex : 500 mg, 1g comprimé, sirop..."
                                     value={formulaire.dosage}
-                                    onChange={(e) => setFormulaire((prev) => ({ ...prev, dosage: e.target.value }))}
+                                    onChange={(e) => setFormulaire({ ...formulaire, dosage: e.target.value })}
                                     disabled={enregistrement}
-                                    autoComplete="off"
+                                    required
                                 />
                             </div>
 
-                            <div className="med-actions">
+                            <div className="medicaments-formulaire-actions">
                                 <button
                                     type="submit"
-                                    className="btn btn-primary btn-action-principal"
+                                    className="btn-action-principal"
                                     disabled={enregistrement}
-                                    style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                                    style={{ flex: 1 }}
                                 >
-                                    {enregistrement ? (
-                                        "Enregistrement..."
-                                    ) : idEdition !== null ? (
-                                        <>
-                                            <IconCheck size={15} /> Sauvegarder
-                                        </>
-                                    ) : (
-                                        <>
-                                            <IconPlus size={15} /> Ajouter à l'inventaire
-                                        </>
-                                    )}
+                                    <IconCheck size={16} />
+                                    <span>
+                                        {enregistrement
+                                            ? "Enregistrement..."
+                                            : idEdition !== null
+                                                ? "Enregistrer les modifications"
+                                                : "Ajouter au catalogue"}
+                                    </span>
                                 </button>
-
                                 {idEdition !== null && (
                                     <button
                                         type="button"
-                                        className="btn btn-secondary"
+                                        className="med-btn med-btn-secondaire"
                                         onClick={annulerEdition}
                                         disabled={enregistrement}
                                     >
@@ -281,40 +279,59 @@ export default function MedicamentPage() {
                         </form>
                     </div>
 
-                    {/* ── Liste & Recherche ── */}
-                    <div className="medicaments-list-card">
-                        <div className="medicaments-list-header">
-                            <div className="search-box" style={{ flex: 1, minWidth: "220px", display: "flex", alignItems: "center" }}>
-                                <IconSearch size={16} style={{ position: "absolute", marginLeft: "12px", color: "var(--muted)" }} />
-                                <input
-                                    type="search"
-                                    className="form-control"
-                                    placeholder="Rechercher par nom ou dosage..."
-                                    value={recherche}
-                                    onChange={(e) => setRecherche(e.target.value)}
-                                    style={{ paddingLeft: "36px" }}
-                                />
+                    {/* Colonne 2 : Liste des médicaments */}
+                    <div className="medicaments-carte">
+                        <div className="medicaments-carte-en-tete" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span className="medicaments-badge-icone">
+                                    <IconPills size={18} />
+                                </span>
+                                <div>
+                                    <h3 className="medicaments-carte-titre">
+                                        Catalogue de la pharmacie
+                                    </h3>
+                                    <p className="medicaments-carte-sous-titre font-tabular">
+                                        {medicaments.length} référence{medicaments.length > 1 ? "s" : ""} disponible{medicaments.length > 1 ? "s" : ""}
+                                    </p>
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={() => charger(true)}
-                                disabled={chargement}
-                                style={{ padding: "8px 14px", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
-                            >
-                                <IconRefresh size={14} /> Actualiser
-                            </button>
+                            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                <button
+                                    type="button"
+                                    className="med-btn-refresh"
+                                    onClick={() => charger(true)}
+                                    disabled={chargement}
+                                    title="Actualiser la liste"
+                                >
+                                    <IconRefresh size={14} className={chargement ? "animation-rotation" : ""} />
+                                    <span>Actualiser</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Barre de recherche */}
+                        <div className="med-search-container">
+                            <span className="med-search-icon" aria-hidden="true">
+                                <IconSearch size={16} />
+                            </span>
+                            <input
+                                type="search"
+                                className="med-search-input"
+                                placeholder="Rechercher par nom ou dosage..."
+                                value={recherche}
+                                onChange={(e) => setRecherche(e.target.value)}
+                            />
                         </div>
 
                         {chargement ? (
-                            <div className="empty-state">
-                                <div className="loading-spinner" />
-                                <p style={{ marginTop: "12px", color: "var(--app-text-muted)" }}>
-                                    Chargement de l'inventaire...
-                                </p>
+                            <div style={{ padding: "40px", textAlign: "center", color: "var(--app-text-muted)" }}>
+                                <div className="animation-rotation" style={{ display: "inline-block", marginBottom: "8px" }}>
+                                    <IconRefresh size={28} />
+                                </div>
+                                <p style={{ margin: 0, fontSize: "0.9rem" }}>Chargement des médicaments...</p>
                             </div>
                         ) : medicamentsFiltres.length === 0 ? (
-                            <div className="empty-state">
+                            <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--app-text-muted)" }}>
                                 <IconPills size={48} />
                                 <h4 style={{ margin: "14px 0 6px", color: "var(--app-text-main)" }}>
                                     {recherche ? "Aucun médicament trouvé" : "Aucun médicament enregistré"}
@@ -351,28 +368,28 @@ export default function MedicamentPage() {
                                                     </span>
                                                 </td>
                                                 <td style={{ textAlign: "right" }}>
-                                                    <div style={{ display: "inline-flex", gap: "6px" }}>
+                                                    <div style={{ display: "inline-flex", gap: "8px", justifyContent: "flex-end" }}>
                                                         <button
                                                             type="button"
-                                                            className="btn btn-secondary"
-                                                            style={{ padding: "5px 10px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                                            className="med-btn-edit"
                                                             onClick={() => modifier(m)}
                                                             disabled={enregistrement || idSuppression !== null}
+                                                            title={`Modifier ${m.nom}`}
                                                         >
-                                                            <IconEdit size={13} /> Modifier
+                                                            <IconEdit size={14} /> Modifier
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            className="btn btn-danger"
-                                                            style={{ padding: "5px 10px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                                            className="med-btn-delete"
                                                             onClick={() => supprimer(m)}
                                                             disabled={enregistrement || idSuppression === m.idMedicament}
+                                                            title={`Supprimer ${m.nom}`}
                                                         >
                                                             {idSuppression === m.idMedicament ? (
-                                                                "..."
+                                                                "Suppression..."
                                                             ) : (
                                                                 <>
-                                                                    <IconTrash size={13} /> Supprimer
+                                                                    <IconTrash size={14} /> Supprimer
                                                                 </>
                                                             )}
                                                         </button>

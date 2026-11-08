@@ -1,8 +1,9 @@
-
 import { useEffect, useState } from "react";
 import "./Login.css";
 import { useNavigate } from "react-router-dom";
 import { loginUser, saveUser } from "../services/authService";
+import { LogoAlZahraoui } from "../components/MedicalIcons";
+
 function Login() {
     const [introFinished, setIntroFinished] = useState(false);
     const [mode, setMode] = useState("LOGIN");
@@ -67,8 +68,12 @@ function Login() {
                 navigate(destination, { replace: true });
 
             } else {
+                const apiBase = (
+                    import.meta.env.VITE_MAIN_API_URL || "http://localhost:8081"
+                ).replace(/\/$/, "");
+
                 const response = await fetch(
-                    "http://localhost:8081/api/auth/register",
+                    `${apiBase}/api/auth/register`,
                     {
                         method: "POST",
                         headers: {
@@ -113,8 +118,6 @@ function Login() {
             }
 
         } catch (error) {
-            console.error("Erreur :", error);
-
             setFeedback({
                 type: "error",
                 message: error.message || "Impossible de contacter le serveur.",
@@ -148,18 +151,18 @@ function Login() {
             <div className="auth-content">
 
                 <header className="brand">
-                    <div className="brand-mark">✚</div>
-                    <div>
-                        <h1>GESTCABMED</h1>
-                        <p>Système de gestion médicale</p>
+                    <div className="brand-logo-pure" aria-label="Logo Al-Zahraoui">
+                        <LogoAlZahraoui size={78} />
+                    </div>
+                    <div className="brand-text">
+                        <h1 className="brand-title-authentic">Al-Zahraoui</h1>
+                        <p className="brand-subtitle-authentic">Cabinet Médical · Système de gestion</p>
                     </div>
                 </header>
 
                 <section className={`auth-panel ${introFinished ? "panel-visible" : ""}`}>
 
                     <div className="panel-heading">
-                        <div className="panel-icon">✚</div>
-
                         <h2>
                             {mode === "LOGIN"
                                 ? "Bienvenue"
@@ -194,150 +197,131 @@ function Login() {
                         </button>
                     </div>
 
-                    <form
-                        key={mode}
-                        onSubmit={handleSubmit}
-                        className="auth-form"
-                    >
+                    {/* Status feedback */}
+                    {feedback.message && (
+                        <div
+                            className={`feedback-box ${feedback.type === "error" ? "feedback-error" : "feedback-success"
+                                }`}
+                        >
+                            <span className="feedback-bullet">•</span>
+                            <span>{feedback.message}</span>
+                        </div>
+                    )}
 
-                        {feedback.message && (
-                            <div
-                                className={`auth-feedback ${feedback.type}`}
-                                role="status"
-                                aria-live="polite"
-                            >
-                                {feedback.message}
-                            </div>
-                        )}
+                    {/* Authentication Form */}
+                    <form onSubmit={handleSubmit} className="auth-form" noValidate>
 
                         {mode === "REGISTER" && (
-                            <div className="registration-fields">
-
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label htmlFor="prenom">Prénom</label>
+                            <>
+                                <div className="input-row">
+                                    <div className="field-group">
+                                        <label htmlFor="nom">Nom</label>
                                         <input
-                                            id="prenom"
-                                            value={prenom}
-                                            onChange={(e) => setPrenom(e.target.value)}
-                                            autoComplete="given-name"
-                                            placeholder="Votre prénom"
+                                            id="nom"
+                                            type="text"
+                                            value={nom}
+                                            onChange={(e) => setNom(e.target.value)}
+                                            placeholder="Ex: Ben Ali"
                                             required
                                         />
                                     </div>
 
-                                    <div className="form-group">
-                                        <label htmlFor="nom">Nom</label>
+                                    <div className="field-group">
+                                        <label htmlFor="prenom">Prénom</label>
                                         <input
-                                            id="nom"
-                                            value={nom}
-                                            onChange={(e) => setNom(e.target.value)}
-                                            autoComplete="family-name"
-                                            placeholder="Votre nom"
+                                            id="prenom"
+                                            type="text"
+                                            value={prenom}
+                                            onChange={(e) => setPrenom(e.target.value)}
+                                            placeholder="Ex: Mohamed"
                                             required
                                         />
                                     </div>
                                 </div>
 
-                                <div className="form-group">
-                                    <label htmlFor="email">Adresse e-mail</label>
+                                <div className="field-group">
+                                    <label htmlFor="email">Email</label>
                                     <input
                                         id="email"
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        autoComplete="email"
-                                        placeholder="exemple@email.com"
+                                        placeholder="votre.email@domaine.tn"
                                         required
                                     />
                                 </div>
 
-                                <div className="form-group">
-                                    <label htmlFor="dateNaissance">Date de naissance</label>
-                                    <input
-                                        id="dateNaissance"
-                                        type="date"
-                                        value={dateNaissance}
-                                        onChange={(e) => setDateNaissance(e.target.value)}
-                                        required
-                                    />
-                                </div>
+                                <div className="input-row">
+                                    <div className="field-group">
+                                        <label htmlFor="dateNaissance">Date de naissance</label>
+                                        <input
+                                            id="dateNaissance"
+                                            type="date"
+                                            value={dateNaissance}
+                                            onChange={(e) => setDateNaissance(e.target.value)}
+                                        />
+                                    </div>
 
-                                <div className="form-group">
-                                    <label htmlFor="adresse">Adresse</label>
-                                    <input
-                                        id="adresse"
-                                        value={adresse}
-                                        onChange={(e) => setAdresse(e.target.value)}
-                                        autoComplete="street-address"
-                                        placeholder="Votre adresse"
-                                        required
-                                    />
+                                    <div className="field-group">
+                                        <label htmlFor="adresse">Adresse</label>
+                                        <input
+                                            id="adresse"
+                                            type="text"
+                                            value={adresse}
+                                            onChange={(e) => setAdresse(e.target.value)}
+                                            placeholder="Ex: Tunis, Ariana"
+                                        />
+                                    </div>
                                 </div>
-
-                            </div>
+                            </>
                         )}
 
-                        <div className="form-group">
-                            <label htmlFor="login">Identifiant</label>
+                        <div className="field-group">
+                            <label htmlFor="login">Identifiant / Nom d'utilisateur</label>
                             <input
                                 id="login"
+                                type="text"
                                 value={login}
                                 onChange={(e) => setLogin(e.target.value)}
-                                autoComplete="username"
-                                placeholder="Votre identifiant"
+                                placeholder="Votre nom d'utilisateur"
                                 required
                             />
                         </div>
 
-                        <div className="form-group">
+                        <div className="field-group">
                             <label htmlFor="password">Mot de passe</label>
                             <input
                                 id="password"
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                autoComplete={
-                                    mode === "LOGIN"
-                                        ? "current-password"
-                                        : "new-password"
-                                }
-                                placeholder="Votre mot de passe"
+                                placeholder="••••••••"
                                 required
                             />
                         </div>
 
                         <button
-                            className="submit-button"
                             type="submit"
+                            className="submit-button"
                             disabled={isLoading}
                         >
                             <span>
                                 {isLoading
-                                    ? mode === "LOGIN"
-                                        ? "Connexion en cours..."
-                                        : "Création en cours..."
+                                    ? "Traitement..."
                                     : mode === "LOGIN"
                                         ? "Se connecter"
                                         : "Créer mon compte"}
                             </span>
-
-                            {!isLoading && <span className="button-arrow">→</span>}
+                            <span className="button-arrow" aria-hidden="true">→</span>
                         </button>
-
                     </form>
 
-                    <div className="panel-footer">
-                        <span className="footer-line" />
-                        <p>GESTCABMED · Votre santé, notre priorité</p>
-                    </div>
-
+                    <footer className="panel-footer">
+                        <p>
+                            Al-Zahraoui · Système médical sécurisé · Conforme RGPD santé
+                        </p>
+                    </footer>
                 </section>
-
-                <p className="page-caption">
-                    Une gestion simple et sécurisée de votre santé.
-                </p>
-
             </div>
         </main>
     );

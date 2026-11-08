@@ -93,6 +93,7 @@ function SecretaryDashboard() {
     useEffect(() => {
         let isCancelled = false;
         if (path.includes("appointments") || path.includes("waiting-room")) {
+            loadPatientsAndDoctors();
             getAllAppointments()
                 .then((data) => {
                     if (!isCancelled) {
@@ -171,6 +172,7 @@ function SecretaryDashboard() {
             });
             showToast("Rendez-vous créé et confirmé avec succès !", "success");
             setShowNewRdvModal(false);
+            setNewRdvForm({ idPatient: "", idDocteur: "", dateHeure: "", motif: "" });
             loadAppointments();
         } catch (err) {
             showToast(err.message || "Erreur lors de la création du rendez-vous.", "error");
@@ -272,7 +274,7 @@ function SecretaryDashboard() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
                         <div>
-                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", color: "#ffffff" }}>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
                                 Régulation des Rendez-vous ({appointments.length})
                             </h3>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
@@ -307,13 +309,13 @@ function SecretaryDashboard() {
                                 type="button"
                                 onClick={() => setFilterStatut(st)}
                                 style={{
-                                    background: filterStatut === st ? "linear-gradient(110deg, #0879f9, #08c7b6)" : "rgba(255, 255, 255, 0.12)",
-                                    border: "1px solid var(--med-bordure)",
-                                    color: "#ffffff",
+                                    background: filterStatut === st ? "linear-gradient(110deg, #0879f9, #08c7b6)" : "#f1f5f9",
+                                    border: "1px solid #cbd5e1",
+                                    color: filterStatut === st ? "#ffffff" : "#334155",
                                     padding: "6px 14px",
                                     borderRadius: "10px",
                                     fontSize: "0.78rem",
-                                    fontWeight: filterStatut === st ? 700 : 500,
+                                    fontWeight: 700,
                                     cursor: "pointer",
                                     transition: "background 0.2s"
                                 }}
@@ -330,7 +332,7 @@ function SecretaryDashboard() {
                     )}
 
                     {isLoadingAppointments ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement des rendez-vous...
                         </div>
                     ) : filteredList.length === 0 ? (
@@ -338,7 +340,7 @@ function SecretaryDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconAppointmentCalendar size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucun rendez-vous correspondant</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucun rendez-vous correspondant</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 Aucun rendez-vous ne correspond au filtre sélectionné.
                             </p>
@@ -347,7 +349,7 @@ function SecretaryDashboard() {
                         <div style={{ width: "100%", overflowX: "auto" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#8affdf", fontSize: "0.78rem", textTransform: "uppercase" }}>
+                                    <tr style={{ borderBottom: "2px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: "0.78rem", textTransform: "uppercase", fontWeight: 700 }}>
                                         <th style={{ padding: "12px 10px" }}>Date & Heure</th>
                                         <th style={{ padding: "12px 10px" }}>Patient</th>
                                         <th style={{ padding: "12px 10px" }}>Médecin</th>
@@ -359,9 +361,9 @@ function SecretaryDashboard() {
                                 <tbody>
                                     {filteredList.map((rdv) => (
                                         <tr key={rdv.idRdv} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
-                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#ffffff" }}>
+                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#0f172a" }}>
                                                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                                    <IconCalendar size={14} /> {rdv.dateHeure}
+                                                    <IconCalendar size={14} style={{ color: "#0284c7" }} /> {rdv.dateHeure}
                                                 </span>
                                             </td>
                                             <td style={{ padding: "14px 10px" }}>
@@ -387,14 +389,14 @@ function SecretaryDashboard() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleUpdateStatus(rdv.idRdv, "CONFIRME")}
-                                                                style={{ background: "rgba(8, 199, 182, 0.28)", border: "1px solid #8affdf", color: "#8affdf", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#047857", border: "1px solid #065f46", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconCheck size={12} /> Confirmer
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleUpdateStatus(rdv.idRdv, "ANNULE")}
-                                                                style={{ background: "rgba(255, 80, 110, 0.22)", border: "1px solid #ff809b", color: "#ff809b", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconClose size={12} /> Annuler
                                                             </button>
@@ -407,14 +409,14 @@ function SecretaryDashboard() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleUpdateStatus(rdv.idRdv, "ANNULE")}
-                                                                style={{ background: "rgba(255, 80, 110, 0.22)", border: "1px solid #ff809b", color: "#ff809b", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconClose size={12} /> Annuler
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setEditingRdv(rdv)}
-                                                                style={{ background: "rgba(255, 255, 255, 0.16)", border: "1px solid var(--med-bordure)", color: "#f6ffff", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#0f172a", border: "1px solid #020617", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconEdit size={12} /> Modifier
                                                             </button>
@@ -426,7 +428,7 @@ function SecretaryDashboard() {
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingRdv(rdv)}
-                                                            style={{ background: "rgba(255, 193, 7, 0.2)", border: "1px solid #ffd54f", color: "#ffe082", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                            style={{ background: "#b45309", border: "1px solid #92400e", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                         >
                                                             <IconEdit size={12} /> Modifier / Rétablir
                                                         </button>
@@ -476,32 +478,32 @@ function SecretaryDashboard() {
 
                     {/* Stats pills du jour */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "14px", marginBottom: "24px" }}>
-                        <div style={{ background: "rgba(255, 255, 255, 0.12)", padding: "16px", borderRadius: "14px", border: "1px solid var(--med-bordure)" }}>
-                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", opacity: 0.8 }}>Total Prévus</span>
-                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#ffffff" }}>{todayAppointments.length}</h3>
+                        <div style={{ background: "#f8fafc", padding: "16px", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
+                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#64748b", fontWeight: 600 }}>Total Prévus</span>
+                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#0f172a" }}>{todayAppointments.length}</h3>
                         </div>
-                        <div style={{ background: "rgba(8, 199, 182, 0.15)", padding: "16px", borderRadius: "14px", border: "1px solid #8affdf" }}>
-                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#8affdf" }}>Confirmés / Arrivés</span>
-                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#8affdf" }}>
+                        <div style={{ background: "#ecfdf5", padding: "16px", borderRadius: "14px", border: "1px solid #10b981" }}>
+                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#065f46", fontWeight: 700 }}>Confirmés / Arrivés</span>
+                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#047857" }}>
                                 {todayAppointments.filter((r) => r.statut === "CONFIRME").length}
                             </h3>
                         </div>
-                        <div style={{ background: "rgba(255, 193, 7, 0.15)", padding: "16px", borderRadius: "14px", border: "1px solid #ffd54f" }}>
-                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#ffe082" }}>En attente</span>
-                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#ffe082" }}>
+                        <div style={{ background: "#fef3c7", padding: "16px", borderRadius: "14px", border: "1px solid #f59e0b" }}>
+                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#92400e", fontWeight: 700 }}>En attente</span>
+                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#b45309" }}>
                                 {todayAppointments.filter((r) => r.statut === "DEMANDE").length}
                             </h3>
                         </div>
-                        <div style={{ background: "rgba(8, 121, 249, 0.15)", padding: "16px", borderRadius: "14px", border: "1px solid #80c4ff" }}>
-                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#80c4ff" }}>Consultés / Terminés</span>
-                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#80c4ff" }}>
+                        <div style={{ background: "#eff6ff", padding: "16px", borderRadius: "14px", border: "1px solid #3b82f6" }}>
+                            <span style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "#1e40af", fontWeight: 700 }}>Consultés / Terminés</span>
+                            <h3 style={{ margin: "4px 0 0", fontSize: "1.8rem", color: "#1d4ed8" }}>
                                 {todayAppointments.filter((r) => r.statut === "TERMINE").length}
                             </h3>
                         </div>
                     </div>
 
                     {isLoadingAppointments ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement du planning du jour...
                         </div>
                     ) : todayAppointments.length === 0 ? (
@@ -509,7 +511,7 @@ function SecretaryDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconFirstAidBox size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucun rendez-vous prévu pour aujourd'hui</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucun rendez-vous prévu pour aujourd'hui</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 La salle d'attente est actuellement libre. Vous pouvez planifier des rendez-vous depuis l'onglet Gestion des rendez-vous.
                             </p>
@@ -530,9 +532,9 @@ function SecretaryDashboard() {
                                 <tbody>
                                     {todayAppointments.map((rdv) => (
                                         <tr key={rdv.idRdv} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
-                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#ffffff" }}>
+                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#0f172a" }}>
                                                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                                    <IconClock size={14} /> {rdv.dateHeure.split(" ")[1] || rdv.dateHeure}
+                                                    <IconClock size={14} style={{ color: "#0284c7" }} /> {rdv.dateHeure.split(" ")[1] || rdv.dateHeure}
                                                 </span>
                                             </td>
                                             <td style={{ padding: "14px 10px" }}>
@@ -589,7 +591,7 @@ function SecretaryDashboard() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
                         <div>
-                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", color: "#ffffff" }}>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
                                 Suivi Administratif des Consultations ({consultations.length})
                             </h3>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
@@ -607,7 +609,7 @@ function SecretaryDashboard() {
                     </div>
 
                     {isLoadingConsultations ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement des dossiers de consultations...
                         </div>
                     ) : consultations.length === 0 ? (
@@ -615,7 +617,7 @@ function SecretaryDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconConsultation size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucune consultation enregistrée</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucune consultation enregistrée</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 Les consultations réalisées par les praticiens s'afficheront ici pour le suivi administratif.
                             </p>
@@ -634,7 +636,7 @@ function SecretaryDashboard() {
                                 <tbody>
                                     {consultations.map((c) => (
                                         <tr key={c.idConsultation} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
-                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#ffffff" }}>
+                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#0f172a" }}>
                                                 #{c.idConsultation} • {c.dateConsultation}
                                             </td>
                                             <td style={{ padding: "14px 10px" }}>
@@ -699,11 +701,14 @@ function SecretaryDashboard() {
                                     required
                                 >
                                     <option value="">-- Choisir un praticien --</option>
-                                    {doctorsList.map((d) => (
-                                        <option key={d.idUtilisateur} value={d.idUtilisateur}>
-                                            Dr. {d.prenom} {d.nom} ({d.specialite})
-                                        </option>
-                                    ))}
+                                    {doctorsList.map((d) => {
+                                        const docId = d.idDocteur || d.idUtilisateur;
+                                        return (
+                                            <option key={docId} value={docId}>
+                                                Dr. {d.prenom} {d.nom} ({d.specialite || "Généraliste"})
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 

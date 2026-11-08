@@ -113,3 +113,16 @@ export async function createPrescription(payload) {
         body: JSON.stringify(payload)
     });
 }
+
+export async function updatePrescription(idOrdonnance, payload) {
+    return request(`/api/prescriptions/${idOrdonnance}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+    });
+}
+
+export async function deletePrescription(idOrdonnance) {
+    return request(`/api/prescriptions/${idOrdonnance}`, {
+        method: "DELETE"
+    });
+}

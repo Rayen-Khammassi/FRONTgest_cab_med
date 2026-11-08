@@ -1,4 +1,3 @@
-
 /* =========================================
    1. GLOBAL STYLES
 ========================================= */
@@ -24,7 +23,7 @@
 
     padding: 35px 20px;
 
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
     color: var(--dark);
 
     background:
@@ -190,7 +189,7 @@
 
 .auth-content {
     width: 100%;
-    max-width: 460px;
+    max-width: 470px;
 
     display: flex;
     flex-direction: column;
@@ -201,16 +200,18 @@
 }
 
 /* =========================================
-   5. BRAND HEADER
+   5. BRAND HEADER (LOGO ONLY, NO CUBIC BG)
 ========================================= */
 
 .brand {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 13px;
+    text-align: center;
+    gap: 10px;
 
-    margin-bottom: 27px;
+    margin-bottom: 28px;
 
     opacity: 0;
     transform: translateY(-12px);
@@ -225,39 +226,48 @@
     }
 }
 
-.brand-mark {
-    width: 48px;
-    height: 48px;
-
+/* Logo only — zero cubic/square wrapper background */
+.brand-logo-pure {
     display: flex;
     align-items: center;
     justify-content: center;
-
-    border-radius: 15px;
-
-    color: white;
-    font-size: 29px;
-    font-weight: 800;
-
-    background: linear-gradient(135deg, #087fa5, #16c4aa);
-
-    box-shadow: 0 8px 20px rgba(8, 127, 165, 0.22);
+    color: #087f9e;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 8px 16px rgba(8, 127, 158, 0.24));
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s ease;
 }
 
-.brand h1 {
+.brand-logo-pure:hover {
+    transform: scale(1.06);
+    filter: drop-shadow(0 12px 22px rgba(8, 127, 158, 0.35));
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Authentic, stylish, artistic Andalusian medical serif */
+.brand-title-authentic {
     margin: 0;
-    color: #123f59;
-
-    font-size: 1.8rem;
-    font-weight: 850;
-    letter-spacing: 2px;
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #0c384f;
+    line-height: 1.15;
+    text-shadow: 0 2px 5px rgba(12, 56, 79, 0.1);
 }
 
-.brand p {
-    margin: 3px 0 0;
-    color: #698697;
-    font-size: 0.82rem;
-    letter-spacing: 0.4px;
+.brand-subtitle-authentic {
+    margin: 5px 0 0;
+    color: #4b6e82;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    font-weight: 600;
 }
 
 /* =========================================
@@ -266,19 +276,19 @@
 
 .auth-panel {
     width: 100%;
-    padding: 35px 38px 25px;
+    padding: 36px 38px 26px;
 
-    border: 1px solid rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.95);
     border-radius: 27px;
 
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.88);
 
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
 
     box-shadow:
-        0 24px 65px rgba(35, 91, 116, 0.13),
-        0 4px 15px rgba(35, 91, 116, 0.05);
+        0 24px 65px rgba(35, 91, 116, 0.14),
+        0 4px 15px rgba(35, 91, 116, 0.06);
 
     opacity: 0;
     transform: translateY(20px) scale(0.985);
@@ -299,41 +309,21 @@
 
 .panel-heading {
     text-align: center;
-    margin-bottom: 26px;
-}
-
-.panel-icon {
-    width: 51px;
-    height: 51px;
-
-    margin: 0 auto 13px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 16px;
-
-    color: white;
-    font-size: 28px;
-    font-weight: 800;
-
-    background: linear-gradient(135deg, #087fa5, #16c4aa);
-
-    box-shadow: 0 8px 20px rgba(8, 127, 165, 0.2);
+    margin-bottom: 24px;
 }
 
 .panel-heading h2 {
-    margin: 0 0 7px;
-    color: #153f55;
-    font-size: 1.75rem;
+    margin: 0 0 6px;
+    color: #0f354a;
+    font-size: 1.7rem;
     font-weight: 750;
+    letter-spacing: -0.015em;
 }
 
 .panel-heading p {
     margin: 0;
-    color: #79909e;
-    font-size: 0.9rem;
+    color: #648293;
+    font-size: 0.92rem;
 }
 
 /* =========================================
@@ -347,10 +337,11 @@
     align-items: center;
 
     padding: 5px;
-    margin-bottom: 26px;
+    margin-bottom: 24px;
 
     border-radius: 13px;
-    background: #edf4f6;
+    background: #e9f2f5;
+    border: 1px solid #d5e5ec;
 }
 
 .auth-tabs button {
@@ -358,24 +349,24 @@
     z-index: 2;
 
     flex: 1;
-    padding: 12px 8px;
+    padding: 11px 8px;
 
     border: none;
     border-radius: 10px;
 
     background: transparent;
-    color: #7b929e;
+    color: #64808e;
 
-    font-size: 0.9rem;
-    font-weight: 650;
+    font-size: 0.92rem;
+    font-weight: 700;
 
     cursor: pointer;
 
-    transition: color 0.3s ease;
+    transition: color 0.25s ease;
 }
 
 .auth-tabs button.selected {
-    color: #087f9e;
+    color: #0c4a6e;
 }
 
 .tab-indicator {
@@ -391,9 +382,9 @@
     border-radius: 10px;
     background: white;
 
-    box-shadow: 0 3px 10px rgba(30, 82, 104, 0.09);
+    box-shadow: 0 3px 10px rgba(30, 82, 104, 0.12);
 
-    transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .auth-tabs.register-active .tab-indicator {
@@ -419,125 +410,123 @@
     }
 }
 
-.registration-fields {
-    animation: formAppear 0.4s ease both;
-}
-
-.form-row {
+.input-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 13px;
 }
 
-.form-group {
+.field-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 17px;
+    margin-bottom: 16px;
 }
 
-.form-group label {
-    margin-bottom: 7px;
+.field-group label {
+    margin-bottom: 6px;
 
-    color: #35566a;
-    font-size: 0.84rem;
-    font-weight: 650;
+    color: #1f4255;
+    font-size: 0.85rem;
+    font-weight: 700;
 }
 
-.form-group input {
+.field-group input {
     width: 100%;
     min-width: 0;
-    height: 47px;
+    height: 48px;
 
     padding: 0 14px;
 
-    border: 1px solid #dce8ed;
+    border: 1.5px solid #d1e2e8;
     border-radius: 11px;
 
     outline: none;
 
-    color: #234b60;
-    background: #f8fbfc;
+    color: #12374b;
+    background: #fbfdfd;
 
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
+    font-weight: 500;
 
     transition:
-        border-color 0.25s ease,
-        background 0.25s ease,
-        box-shadow 0.25s ease,
-        transform 0.25s ease;
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.form-group input::placeholder {
-    color: #a2b4bd;
+.field-group input::placeholder {
+    color: #9ab0ba;
 }
 
-.form-group input:hover {
-    border-color: #b5d7dc;
+.field-group input:hover {
+    border-color: #8bbec7;
 }
 
-.form-group input:focus {
-    border-color: #13bda9;
+.field-group input:focus {
+    border-color: #087f9e;
     background: white;
-    box-shadow: 0 0 0 4px rgba(19, 189, 169, 0.11);
+    box-shadow: 0 0 0 3.5px rgba(8, 127, 158, 0.16);
 }
 
 /* =========================================
-   10. SUBMIT BUTTON
+   10. SUBMIT BUTTON (DARKER & HIGH CONTRAST)
 ========================================= */
 
 .submit-button {
     position: relative;
 
     width: 100%;
-    min-height: 49px;
+    min-height: 50px;
 
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
 
-    margin-top: 7px;
-    padding: 13px 18px;
+    margin-top: 10px;
+    padding: 13px 20px;
 
-    border: none;
+    border: 1px solid #075985;
     border-radius: 12px;
 
-    color: white;
-    background: linear-gradient(110deg, #087fa5, #12bda8);
+    color: #ffffff !important;
+    background: #0c4a6e; /* Solid dark deep ocean/navy */
 
     font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 700;
+    font-size: 0.96rem;
+    font-weight: 750;
+    letter-spacing: 0.015em;
 
     cursor: pointer;
 
-    box-shadow: 0 8px 20px rgba(8, 127, 165, 0.2);
+    box-shadow: 0 6px 18px rgba(12, 74, 110, 0.35);
 
     transition:
-        transform 0.25s ease,
-        box-shadow 0.25s ease,
-        filter 0.25s ease;
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .submit-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(8, 127, 165, 0.27);
-    filter: brightness(1.04);
+    transform: translateY(-1.5px);
+    background: #082f49; /* Darker navy */
+    border-color: #032135;
+    box-shadow: 0 10px 26px rgba(8, 47, 73, 0.45);
 }
 
 .submit-button:active:not(:disabled) {
-    transform: translateY(0);
+    transform: scale(0.97);
 }
 
 .submit-button:disabled {
-    opacity: 0.7;
+    opacity: 0.65;
     cursor: not-allowed;
 }
 
 .button-arrow {
-    font-size: 1.2rem;
-    transition: transform 0.25s ease;
+    font-size: 1.25rem;
+    transition: transform 0.2s ease;
 }
 
 .submit-button:hover .button-arrow {
@@ -546,32 +535,35 @@
 
 /* =========================================
    11. FEEDBACK
-========================================= */
+======================================== */
 
-.auth-feedback {
-    width: 100%;
-    padding: 12px 14px;
+.feedback-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 10px;
     margin-bottom: 18px;
-
-    border-radius: 11px;
-
-    font-size: 0.84rem;
-    line-height: 1.5;
-    text-align: center;
-
-    animation: feedbackAppear 0.3s ease;
+    font-size: 0.88rem;
+    font-weight: 600;
+    animation: feedbackAppear 0.25s ease;
 }
 
-.auth-feedback.success {
-    color: #08734e;
-    background: #e8f8f0;
-    border: 1px solid #b9ead0;
+.feedback-error {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
 }
 
-.auth-feedback.error {
-    color: #b52e43;
-    background: #fff0f1;
-    border: 1px solid #f4c5cb;
+.feedback-success {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.feedback-bullet {
+    font-size: 1.2rem;
+    line-height: 1;
 }
 
 @keyframes feedbackAppear {
@@ -594,25 +586,11 @@
     text-align: center;
 }
 
-.footer-line {
-    display: block;
-    width: 100%;
-    height: 1px;
-    background: #e9f0f2;
-    margin-bottom: 15px;
-}
-
 .panel-footer p {
     margin: 0;
-    color: #91a5ae;
-    font-size: 0.75rem;
-}
-
-.page-caption {
-    margin: 20px 0 0;
-    color: #78929e;
-    font-size: 0.82rem;
-    text-align: center;
+    color: #7b94a2;
+    font-size: 0.78rem;
+    font-weight: 500;
 }
 
 /* =========================================
@@ -633,14 +611,8 @@
         margin-bottom: 22px;
     }
 
-    .brand h1 {
-        font-size: 1.45rem;
-    }
-
-    .brand-mark {
-        width: 42px;
-        height: 42px;
-        font-size: 24px;
+    .brand-title-authentic {
+        font-size: 1.95rem;
     }
 
     .auth-panel {
@@ -657,20 +629,16 @@
     .decoration-shield {
         opacity: 0.5;
     }
-
-    .page-caption {
-        font-size: 0.75rem;
-    }
 }
 
-@media (max-width: 380px) {
-    .form-row {
+@media (max-width: 420px) {
+    .input-row {
         grid-template-columns: 1fr;
         gap: 0;
     }
 
     .auth-panel {
-        padding: 24px 17px 20px;
+        padding: 24px 18px 20px;
     }
 }
 

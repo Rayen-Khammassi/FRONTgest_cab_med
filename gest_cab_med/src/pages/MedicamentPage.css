@@ -1,160 +1,401 @@
-/* GESTCABMED — Module Médicaments
-   Design harmonisé avec DashboardLayout & App.css (Apple-inspired Glassmorphism).
-*/
+/* =================================================================
+   AL-ZAHRAOUI — MODULE MÉDICAMENTS & PHARMACIE
+   Thème médical premium harmonisé avec DashboardLayout & App.css
+   ================================================================= */
 
-.medicaments-dashboard-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
+.medicaments-conteneur {
     width: 100%;
+    margin-top: 6px;
+    box-sizing: border-box;
 }
 
-.medicaments-stats-bar {
+/* ── Grille principale 2 colonnes ── */
+.medicaments-grille {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: flex-start;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1220px) {
+    .medicaments-grille {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+/* ── Cartes blanches avec ombre douce & bordure nette ── */
+.medicaments-carte {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    padding: 26px 24px;
+    box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+    color: #0f172a;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.medicaments-carte:hover {
+    box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.09), 0 6px 14px -3px rgba(15, 23, 42, 0.04);
+}
+
+/* ── En-tête de carte avec icône badge ── */
+.medicaments-carte-en-tete {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 20px 24px;
-    border-radius: var(--app-radius-lg);
-    background: var(--app-glass-bg);
-    border: 1px solid var(--app-glass-border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: var(--app-shadow-card);
-    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
 }
 
-.medicaments-summary-text {
-    flex: 1;
-    min-width: 260px;
-}
-
-.medicaments-stat-pill {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 18px;
-    border-radius: var(--app-radius-md);
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid var(--app-glass-border);
-    box-shadow: var(--app-shadow-sm);
-}
-
-.medicaments-stat-icon-wrap {
+.medicaments-badge-icone {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 14px;
+    background: #f0fdfa;
+    border: 1px solid #ccfbf1;
+    color: #0f766e;
     display: grid;
     place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: var(--app-radius-sm);
-    background: rgba(8, 127, 165, 0.1);
+    box-shadow: 0 2px 8px rgba(15, 118, 110, 0.08);
 }
 
-.medicaments-stat-pill strong {
-    display: block;
-    font-size: 1.5rem;
-    color: var(--app-text-main);
-    line-height: 1.1;
+.medicaments-carte-titre {
+    margin: 0 0 5px 0;
+    font-size: 1.28rem;
+    font-weight: 750;
+    color: #0f172a;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
 }
 
-.medicaments-stat-pill span {
+.medicaments-carte-sous-titre {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+/* ── Formulaire d'ajout / modification ── */
+.medicaments-formulaire {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.medicaments-formulaire .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 0;
+}
+
+.medicaments-formulaire .form-label {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: 0.01em;
+}
+
+.medicaments-formulaire .form-control {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.medicaments-formulaire .form-control::placeholder {
+    color: #94a3b8;
+}
+
+.medicaments-formulaire .form-control:hover {
+    border-color: #94a3b8;
+    background: #ffffff;
+}
+
+.medicaments-formulaire .form-control:focus {
+    border-color: #0284c7;
+    background: #ffffff;
+    box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.15);
+}
+
+.medicaments-formulaire-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+/* ── Barre de recherche du catalogue ── */
+.med-search-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.med-search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+    transition: color 0.15s ease;
+}
+
+.med-search-input {
+    width: 100%;
+    height: 46px;
+    padding: 0 16px 0 46px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.med-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.med-search-input:hover {
+    border-color: #94a3b8;
+    background: #ffffff;
+}
+
+.med-search-input:focus {
+    border-color: #0284c7;
+    background: #ffffff;
+    box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.15);
+}
+
+.med-search-container:focus-within .med-search-icon {
+    color: #0284c7;
+}
+
+/* ── Bouton Actualiser ── */
+.med-btn-refresh {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 11px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.med-btn-refresh:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
+    transform: translateY(-1px);
+}
+
+/* ── Tableau du catalogue pharmaceutique ── */
+.medicaments-carte .table-responsive {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.medicaments-carte .app-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.medicaments-carte .app-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.76rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 14px 16px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.medicaments-carte .app-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #1e293b;
+    transition: background 0.15s ease;
+}
+
+.medicaments-carte .app-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.medicaments-carte .app-table tbody tr:hover td {
+    background: #f8fafc;
+}
+
+.medicaments-carte .app-table .row-editing td {
+    background: #f0fdf4 !important;
+}
+
+/* Badge dosage */
+.medicaments-carte .app-badge.badge-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #e0f2fe;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
     font-size: 0.78rem;
-    color: var(--app-text-muted);
+    font-weight: 700;
 }
 
-.medicaments-notice {
+/* ── Boutons d'action Modifier / Supprimer (Dark & High Contrast) ── */
+.med-btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: #0f172a !important;
+    border: 1px solid #020617 !important;
+    color: #ffffff !important;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.2);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.med-btn-edit:hover:not(:disabled) {
+    background: #1e293b !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
+}
+
+.med-btn-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: #991b1b !important;
+    border: 1px solid #7f1d1d !important;
+    color: #ffffff !important;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(153, 27, 27, 0.25);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.med-btn-delete:hover:not(:disabled) {
+    background: #7f1d1d !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(127, 29, 29, 0.45);
+}
+
+.med-btn-edit:disabled,
+.med-btn-delete:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ── Alerte notification ── */
+.med-alerte {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 14px 18px;
-    border-radius: var(--app-radius-md);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    font-size: 0.9rem;
-    font-weight: 500;
+    border-radius: 14px;
+    margin-bottom: 22px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    animation: alerteGlisse 0.25s ease;
 }
 
-.medicaments-notice-info {
-    background: rgba(8, 127, 165, 0.12);
-    border: 1px solid rgba(8, 127, 165, 0.3);
-    color: #05536d;
+@keyframes alerteGlisse {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.medicaments-notice-succes {
-    background: rgba(22, 196, 170, 0.15);
-    border: 1px solid rgba(22, 196, 170, 0.35);
-    color: #0b685a;
+.med-alerte-succes {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
 }
 
-.medicaments-notice-erreur {
-    background: rgba(239, 68, 68, 0.12);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+.med-alerte-erreur {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
     color: #991b1b;
 }
 
-.medicaments-notice-icone {
-    font-size: 1.1rem;
+.med-alerte-icone {
+    display: grid;
+    place-items: center;
     flex-shrink: 0;
 }
 
-.medicaments-grille {
+.med-alerte-texte {
+    flex: 1;
+}
+
+.med-alerte-fermer {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    opacity: 0.7;
     display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 24px;
+    place-items: center;
+    transition: opacity 0.15s ease;
 }
 
-@media (max-width: 960px) {
-    .medicaments-grille {
-        grid-template-columns: 1fr;
-    }
+.med-alerte-fermer:hover {
+    opacity: 1;
 }
 
-.medicaments-form-card {
-    background: var(--app-glass-bg);
-    border: 1px solid var(--app-glass-border);
-    border-radius: var(--app-radius-lg);
-    padding: 24px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: var(--app-shadow-card);
-    height: fit-content;
+/* Animation rotation pour le rechargement */
+.animation-rotation {
+    animation: rotationInfini 1s linear infinite;
 }
 
-.medicaments-form-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 20px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--app-text-main);
-}
-
-.med-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.medicaments-list-card {
-    background: var(--app-glass-bg);
-    border: 1px solid var(--app-glass-border);
-    border-radius: var(--app-radius-lg);
-    padding: 24px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: var(--app-shadow-card);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.medicaments-list-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.row-editing {
-    background: rgba(8, 127, 165, 0.08) !important;
+@keyframes rotationInfini {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }

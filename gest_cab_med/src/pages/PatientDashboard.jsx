@@ -50,6 +50,44 @@ const cards = [
     },
 ];
 
+const formatFrenchDateTime = (dtStr) => {
+    if (!dtStr) return "Non précisée";
+    const str = String(dtStr).trim();
+    try {
+        const [dPart, tPart] = str.split(/[T ]/);
+        if (dPart && dPart.includes("-")) {
+            const [y, m, d] = dPart.split("-");
+            const time = tPart ? tPart.slice(0, 5) : "";
+            return `${d}/${m}/${y}${time ? ` à ${time}` : ""}`;
+        }
+    } catch {
+        // fallback
+    }
+    return str;
+};
+
+const formatFrenchDate = (dateStr) => {
+    if (!dateStr) return "Non renseignée";
+    const str = String(dateStr).trim();
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
+    const parts = str.split("T")[0].split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    try {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, "0");
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+    } catch {
+        // fallback
+    }
+    return str;
+};
+
 function PatientDashboard() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -93,6 +131,7 @@ function PatientDashboard() {
     useEffect(() => {
         let isCancelled = false;
         if (path === "/patient/appointments" && user?.idUtilisateur) {
+            setIsLoadingAppointments(true);
             getAppointmentsByPatient(user.idUtilisateur)
                 .then((data) => {
                     if (!isCancelled) {
@@ -111,6 +150,7 @@ function PatientDashboard() {
     useEffect(() => {
         let isCancelled = false;
         if (path === "/patient/prescriptions" && user?.idUtilisateur) {
+            setIsLoadingPrescriptions(true);
             getPrescriptionsByPatient(user.idUtilisateur)
                 .then((data) => {
                     if (!isCancelled) {
@@ -211,9 +251,9 @@ function PatientDashboard() {
                 <>
                     <div className="welcome-banner">
                         <div>
-                            <span className="banner-label">VOTRE DOSSIER SANTÉ</span>
-                            <h2>Votre santé, notre priorité.</h2>
-                            <p>Gérez facilement vos rendez-vous et consultez vos ordonnances médicales.</p>
+                            <span className="banner-label">ESPACE PATIENT · AL-ZAHRAOUI</span>
+                            <h2>Votre santé, notre engagement.</h2>
+                            <p>Consultez vos rendez-vous, vos ordonnances officielles et communiquez avec votre cabinet.</p>
                         </div>
                         <div className="banner-decoration">
                             <IconMedicineCabinet size={32} />
@@ -261,10 +301,10 @@ function PatientDashboard() {
                     >
                         <IconArrowLeft size={16} /> Retour à l'accueil
                     </button>
-                    <h3 style={{ margin: "0 0 8px 0", fontSize: "1.25rem", color: "#ffffff" }}>
+                    <h3 style={{ margin: "0 0 8px 0", fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
                         Demande de rendez-vous médical
                     </h3>
-                    <p style={{ opacity: 0.85, fontSize: "0.88rem", marginBottom: "22px" }}>
+                    <p style={{ color: "#64748b", fontSize: "0.88rem", marginBottom: "22px" }}>
                         Remplissez la date souhaitée et le praticien. Le secrétariat validera votre demande.
                     </p>
 
@@ -348,9 +388,9 @@ function PatientDashboard() {
                     </button>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#ffffff" }}>Mes rendez-vous</h3>
+                            <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>Mes rendez-vous ({appointments.length})</h3>
                             <p style={{ margin: "4px 0 0", opacity: 0.8, fontSize: "0.85rem" }}>
-                                Retrouvez le statut et l'historique de vos rendez-vous au cabinet.
+                                Retrouvez le statut et l'historique de vos rendez-vous au cabinet Al-Zahraoui.
                             </p>
                         </div>
                         <button
@@ -363,7 +403,7 @@ function PatientDashboard() {
                     </div>
 
                     {isLoadingAppointments ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement de vos rendez-vous...
                         </div>
                     ) : appointments.length === 0 ? (
@@ -377,43 +417,43 @@ function PatientDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconAppointmentCalendar size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucun rendez-vous enregistré</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucun rendez-vous enregistré</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 Vos rendez-vous demandés ou confirmés s'afficheront ici.
                             </p>
                         </div>
                     ) : (
                         <div style={{ width: "100%", overflowX: "auto" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
+                            <table className="patient-table">
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#8affdf", fontSize: "0.78rem", textTransform: "uppercase" }}>
-                                        <th style={{ padding: "12px 10px" }}>Date &amp; Heure</th>
-                                        <th style={{ padding: "12px 10px" }}>Médecin</th>
-                                        <th style={{ padding: "12px 10px" }}>Spécialité</th>
-                                        <th style={{ padding: "12px 10px" }}>Motif</th>
-                                        <th style={{ padding: "12px 10px" }}>Statut</th>
+                                    <tr>
+                                        <th>Date &amp; Heure</th>
+                                        <th>Médecin</th>
+                                        <th>Spécialité</th>
+                                        <th>Motif</th>
+                                        <th>Statut</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {appointments.map((rdv) => (
-                                        <tr key={rdv.idRdv} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
-                                            <td className="font-tabular" style={{ padding: "14px 10px", fontWeight: 700, color: "#ffffff" }}>
+                                        <tr key={rdv.idRdv}>
+                                            <td className="font-tabular" style={{ fontWeight: 700, color: "#0f172a" }}>
                                                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                                    <IconCalendar size={14} /> {rdv.dateHeure}
+                                                    <IconCalendar size={14} style={{ color: "#38bdf8" }} /> {formatFrenchDateTime(rdv.dateHeure)}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: "14px 10px" }}>
-                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                                    <IconUser size={14} /> Dr. {rdv.docteurPrenom} {rdv.docteurNom}
+                                            <td style={{ color: "#ffffff" }}>
+                                                <span className="patient-name-cell">
+                                                    <IconUser size={15} /> Dr. {rdv.docteurPrenom} {rdv.docteurNom}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: "14px 10px", opacity: 0.85 }}>
-                                                {rdv.docteurSpecialite || "Généraliste"}
+                                            <td style={{ color: "#94a3b8" }}>
+                                                {rdv.docteurSpecialite || "Médecine générale"}
                                             </td>
-                                            <td style={{ padding: "14px 10px", opacity: 0.85 }}>
+                                            <td style={{ color: "#cbd5e1" }}>
                                                 {rdv.motif || "Non spécifié"}
                                             </td>
-                                            <td style={{ padding: "14px 10px" }}>
+                                            <td>
                                                 {getStatusBadge(rdv.statut)}
                                             </td>
                                         </tr>
@@ -437,15 +477,17 @@ function PatientDashboard() {
                     </button>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
                         <div>
-                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", color: "#ffffff" }}>Mes ordonnances médicales</h3>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
+                                Mes ordonnances médicales ({prescriptions.length})
+                            </h3>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
-                                Retrouvez le détail de vos prescriptions et téléchargez vos ordonnances.
+                                Retrouvez le détail de vos prescriptions et téléchargez vos ordonnances officielles.
                             </p>
                         </div>
                     </div>
 
                     {isLoadingPrescriptions ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement de vos ordonnances...
                         </div>
                     ) : prescriptions.length === 0 ? (
@@ -459,7 +501,7 @@ function PatientDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconPrescription size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucune ordonnance archivée</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucune ordonnance archivée</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 Vos ordonnances délivrées par votre praticien s'afficheront ici après vos consultations.
                             </p>
@@ -470,20 +512,19 @@ function PatientDashboard() {
                                 <div key={ord.idOrdonnance} className="ordonnance-card">
                                     <div className="ordonnance-meta">
                                         <div>
-                                            <span className="font-mono font-tabular" style={{ fontSize: "0.78rem", color: "#8affdf", fontWeight: 700, letterSpacing: "1px" }}>
-                                                ORDONNANCE N° {ord.idOrdonnance}
+                                            <span className="font-mono font-tabular ordonnance-tag">
+                                                ORDONNANCE N° {ord.idOrdonnance} • {formatFrenchDate(ord.dateCreation)}
                                             </span>
-                                            <h4 style={{ margin: "4px 0", color: "#ffffff", fontSize: "1.15rem" }}>
-                                                Dr. {ord.docteurPrenom} {ord.docteurNom} ({ord.docteurSpecialite || "Généraliste"})
+                                            <h4 className="ordonnance-title">
+                                                Dr. {ord.docteurPrenom} {ord.docteurNom} ({ord.docteurSpecialite || "Médecin traitant"})
                                             </h4>
-                                            <span className="font-tabular" style={{ fontSize: "0.82rem", opacity: 0.8 }}>
-                                                Délivrée le {ord.dateCreation} {ord.diagnostic ? `• Diagnostic : ${ord.diagnostic}` : ""}
+                                            <span className="ordonnance-subtitle">
+                                                Diagnostic associé : <strong>{ord.diagnostic || "Général"}</strong>
                                             </span>
                                         </div>
                                         <button
                                             type="button"
-                                            className="btn-action-principal"
-                                            style={{ minHeight: "38px", padding: "8px 16px", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                            className="btn-ord-print"
                                             onClick={() => setPrintPrescription(ord)}
                                         >
                                             <IconPrint size={14} /> Imprimer / Télécharger
@@ -493,27 +534,27 @@ function PatientDashboard() {
                                     <div style={{ width: "100%", overflowX: "auto" }}>
                                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
                                             <thead>
-                                                <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.2)", color: "#8affdf", fontSize: "0.75rem", textTransform: "uppercase" }}>
-                                                    <th style={{ padding: "8px 6px", textAlign: "left" }}>Médicament</th>
-                                                    <th style={{ padding: "8px 6px", textAlign: "left" }}>Posologie</th>
-                                                    <th style={{ padding: "8px 6px", textAlign: "left" }}>Fréquence</th>
-                                                    <th style={{ padding: "8px 6px", textAlign: "left" }}>Durée</th>
-                                                    <th style={{ padding: "8px 6px", textAlign: "center" }}>Qté</th>
+                                                <tr style={{ borderBottom: "1px solid #e2e8f0", color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                                    <th style={{ padding: "10px 8px", textAlign: "left" }}>Médicament</th>
+                                                    <th style={{ padding: "10px 8px", textAlign: "left" }}>Posologie</th>
+                                                    <th style={{ padding: "10px 8px", textAlign: "left" }}>Fréquence</th>
+                                                    <th style={{ padding: "10px 8px", textAlign: "left" }}>Durée</th>
+                                                    <th style={{ padding: "10px 8px", textAlign: "center" }}>Qté</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {ord.items && ord.items.map((it) => (
-                                                    <tr key={it.idPrescription} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                                                        <td style={{ padding: "10px 6px", fontWeight: 600, color: "#ffffff" }}>
+                                                {ord.items && ord.items.map((it, idx) => (
+                                                    <tr key={it.idPrescription || idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                                        <td style={{ padding: "12px 8px", fontWeight: 600, color: "#1e293b" }}>
                                                             <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                                                <IconPills size={14} /> {it.nomMedicament}
+                                                                <IconPills size={14} style={{ color: "#0284c7" }} /> {it.nomMedicament}
                                                             </span>
-                                                            <span style={{ opacity: 0.7, fontWeight: 400, marginLeft: "6px" }}>({it.dosageMedicament})</span>
+                                                            <span style={{ color: "#64748b", fontWeight: 400, marginLeft: "6px" }}>({it.dosageMedicament})</span>
                                                         </td>
-                                                        <td style={{ padding: "10px 6px" }}>{it.posologie}</td>
-                                                        <td style={{ padding: "10px 6px" }}>{it.frequence}</td>
-                                                        <td style={{ padding: "10px 6px" }}>{it.duree}</td>
-                                                        <td className="font-tabular" style={{ padding: "10px 6px", textAlign: "center", fontWeight: 700, color: "#8affdf" }}>
+                                                        <td style={{ padding: "12px 8px", color: "#334155" }}>{it.posologie}</td>
+                                                        <td style={{ padding: "12px 8px", color: "#334155" }}>{it.frequence}</td>
+                                                        <td style={{ padding: "12px 8px", color: "#334155" }}>{it.duree}</td>
+                                                        <td className="font-tabular" style={{ padding: "12px 8px", textAlign: "center", fontWeight: 700, color: "#0284c7" }}>
                                                             {it.quantite}
                                                         </td>
                                                     </tr>
@@ -531,7 +572,7 @@ function PatientDashboard() {
             {/* Modal Impression Ordonnance */}
             {printPrescription && (
                 <div className="modal-overlay" onClick={() => setPrintPrescription(null)}>
-                    <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ background: "#ffffff", color: "#1f2937", maxWidth: "620px" }}>
+                    <div className="modal-glass printable-ordonnance" onClick={(e) => e.stopPropagation()} style={{ background: "#ffffff", color: "#1f2937", maxWidth: "660px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #0879f9", paddingBottom: "14px", marginBottom: "20px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                 <div style={{ color: "#0879f9" }}>
@@ -539,11 +580,12 @@ function PatientDashboard() {
                                 </div>
                                 <div>
                                     <h2 style={{ margin: 0, color: "#0879f9", fontSize: "1.4rem", letterSpacing: "1px" }}>CABINET MÉDICAL AL-ZAHRAOUI</h2>
-                                    <p style={{ margin: "3px 0 0", fontSize: "0.85rem", color: "#4b5563" }}>Dr. {printPrescription.docteurPrenom} {printPrescription.docteurNom} — {printPrescription.docteurSpecialite || "Généraliste"}</p>
+                                    <p style={{ margin: "3px 0 0", fontSize: "0.85rem", color: "#4b5563" }}>Dr. {printPrescription.docteurPrenom} {printPrescription.docteurNom} — {printPrescription.docteurSpecialite || "Médecine générale"}</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
+                                className="print-hide"
                                 onClick={() => setPrintPrescription(null)}
                                 style={{ background: "#f3f4f6", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 aria-label="Fermer"
@@ -557,11 +599,11 @@ function PatientDashboard() {
                                 <strong style={{ color: "#111827" }}>Patient :</strong> {printPrescription.patientPrenom} {printPrescription.patientNom}
                             </div>
                             <div className="font-tabular">
-                                <strong style={{ color: "#111827" }}>Date :</strong> {printPrescription.dateCreation}
+                                <strong style={{ color: "#111827" }}>Date d'émission :</strong> {formatFrenchDate(printPrescription.dateCreation)}
                             </div>
                         </div>
 
-                        <h3 style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: "8px", fontSize: "1.05rem", color: "#111827" }}>PRESCRIPTION MÉDICALE</h3>
+                        <h3 style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: "8px", fontSize: "1.05rem", color: "#111827" }}>PRESCRIPTION MÉDICALE OFFICIELLE</h3>
                         <div style={{ margin: "20px 0" }}>
                             {printPrescription.items && printPrescription.items.map((it, idx) => (
                                 <div key={it.idPrescription || idx} style={{ marginBottom: "16px", paddingLeft: "10px", borderLeft: "3px solid #08c7b6" }}>
@@ -584,7 +626,7 @@ function PatientDashboard() {
                             </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: "10px", marginTop: "24px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
+                        <div className="print-hide" style={{ display: "flex", gap: "10px", marginTop: "24px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
                             <button
                                 type="button"
                                 style={{

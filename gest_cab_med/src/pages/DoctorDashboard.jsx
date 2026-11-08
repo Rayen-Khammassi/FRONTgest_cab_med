@@ -15,7 +15,9 @@ import {
     createConsultation,
     updateConsultation,
     getPrescriptionsByDoctor,
-    createPrescription
+    createPrescription,
+    updatePrescription,
+    deletePrescription
 } from "../services/medicalService";
 import { medicamentApi } from "../services/medicamentApi";
 import {
@@ -41,6 +43,7 @@ import {
     LogoAlZahraoui
 } from "../components/MedicalIcons";
 import NotificationToast from "../components/NotificationToast";
+import ConfirmModal from "../components/ConfirmModal";
 
 const cards = [
     { icon: IconPatientDossier, title: "Gestion des patients", description: "Consulter et gérer les dossiers des patients.", path: "/doctor/patients" },
@@ -49,6 +52,28 @@ const cards = [
     { icon: IconPrescription, title: "Ordonnances", description: "Créer et gérer les prescriptions médicales.", path: "/doctor/prescriptions" },
     { icon: IconPills, title: "Médicaments", description: "Inventaire de la pharmacie, dosages et gestion des stocks.", path: "/doctor/medicaments" },
 ];
+
+const formatFrenchDate = (dateStr) => {
+    if (!dateStr) return "Non renseignée";
+    const str = String(dateStr).trim();
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(str)) return str;
+    const parts = str.split("T")[0].split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    try {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, "0");
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+    } catch {
+        // fallback
+    }
+    return str;
+};
 
 function DoctorDashboard() {
     const navigate = useNavigate();
@@ -62,6 +87,7 @@ function DoctorDashboard() {
     const [actionMessage, setActionMessage] = useState("");
     const [editingRdv, setEditingRdv] = useState(null); // { idRdv, statut, dateHeure, motif }
     const [toast, setToast] = useState(null); // { message, type }
+    const [confirmModalState, setConfirmModalState] = useState(null);
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -102,6 +128,7 @@ function DoctorDashboard() {
     const [isLoadingPrescriptions, setIsLoadingPrescriptions] = useState(false);
     const [availableMeds, setAvailableMeds] = useState([]);
     const [showNewPrescriptionModal, setShowNewPrescriptionModal] = useState(false);
+    const [editingPrescriptionModal, setEditingPrescriptionModal] = useState(null);
     const [printPrescription, setPrintPrescription] = useState(null);
     const [prescriptionForm, setPrescriptionForm] = useState({
         idConsultation: "",
@@ -174,20 +201,27 @@ function DoctorDashboard() {
         }
     };
 
-    const handleTogglePatientStatus = async (patient) => {
+    const handleTogglePatientStatus = (patient) => {
         const newActif = !patient.actif;
-        const confirmMsg = newActif
-            ? `Réactiver le dossier de ${patient.prenom} ${patient.nom} ?`
-            : `Désactiver le dossier de ${patient.prenom} ${patient.nom} ? (L'historique des RDVs et consultations sera préservé)`;
-        if (!window.confirm(confirmMsg)) return;
-
-        try {
-            await togglePatientStatus(patient.idUtilisateur, newActif);
-            showToast(`Patient ${patient.prenom} ${patient.nom} ${newActif ? "réactivé" : "désactivé"} avec succès.`, "success");
-            loadPatients();
-        } catch (error) {
-            showToast(error.message || "Erreur lors du changement de statut.", "error");
-        }
+        setConfirmModalState({
+            title: newActif ? "Réactiver le dossier patient" : "Désactiver le dossier patient",
+            message: newActif
+                ? `Souhaitez-vous réactiver le dossier médical de ${patient.prenom} ${patient.nom} ? Le patient pourra à nouveau prendre rendez-vous.`
+                : `Souhaitez-vous désactiver le dossier médical de ${patient.prenom} ${patient.nom} ? L'historique des consultations et ordonnances sera entièrement préservé.`,
+            confirmText: newActif ? "Accepter (Réactiver)" : "Accepter (Désactiver)",
+            cancelText: "Annuler",
+            variant: newActif ? "success" : "danger",
+            onConfirm: async () => {
+                setConfirmModalState(null);
+                try {
+                    await togglePatientStatus(patient.idUtilisateur, newActif);
+                    showToast(`Patient ${patient.prenom} ${patient.nom} ${newActif ? "réactivé" : "désactivé"} avec succès.`, "success");
+                    loadPatients();
+                } catch (error) {
+                    showToast(error.message || "Erreur lors du changement de statut.", "error");
+                }
+            }
+        });
     };
 
     const handleUpdateConsultationSubmit = async (e) => {
@@ -222,9 +256,11 @@ function DoctorDashboard() {
             getConsultationsByDoctor(user.idUtilisateur)
                 .then((data) => { if (!isCancelled) { setConsultations(data || []); setIsLoadingConsultations(false); } })
                 .catch(() => { if (!isCancelled) setIsLoadingConsultations(false); });
-            // also load appointments for dropdown
             getAppointmentsByDoctor(user.idUtilisateur).then((data) => {
                 if (!isCancelled) setAppointments(data || []);
+            });
+            medicamentApi.list().then((meds) => {
+                if (!isCancelled) setAvailableMeds(meds || []);
             });
         } else if (path === "/doctor/prescriptions" && user?.idUtilisateur) {
             getPrescriptionsByDoctor(user.idUtilisateur)
@@ -293,15 +329,24 @@ function DoctorDashboard() {
             loadConsultations();
             loadAppointments();
 
-            // Propose prescription
-            const createOrd = window.confirm("Consultation enregistrée. Souhaitez-vous générer immédiatement une ordonnance pour ce patient ?");
-            if (createOrd && res?.idConsultation) {
-                setPrescriptionForm({
-                    idConsultation: res.idConsultation,
-                    items: [{ idMedicament: availableMeds[0]?.idMedicament || "", posologie: "1 cp matin et soir", frequence: "Pendant les repas", duree: "7 jours", quantite: 1 }]
-                });
-                setShowNewPrescriptionModal(true);
-            }
+            // French Confirmation Pop-up instead of window.confirm
+            setConfirmModalState({
+                title: "Générer une ordonnance",
+                message: "La consultation a été enregistrée avec succès. Souhaitez-vous rédiger immédiatement une ordonnance médicamenteuse pour ce patient ?",
+                confirmText: "Accepter (Rédiger)",
+                cancelText: "Annuler",
+                variant: "primary",
+                onConfirm: () => {
+                    setConfirmModalState(null);
+                    if (res?.idConsultation) {
+                        setPrescriptionForm({
+                            idConsultation: res.idConsultation,
+                            items: [{ idMedicament: availableMeds[0]?.idMedicament || "", posologie: "1 cp matin et soir", frequence: "Pendant les repas", duree: "7 jours", quantite: 1 }]
+                        });
+                        setShowNewPrescriptionModal(true);
+                    }
+                }
+            });
         } catch (error) {
             showToast(error.message || "Erreur lors de l'enregistrement de la consultation.", "error");
         }
@@ -341,7 +386,6 @@ function DoctorDashboard() {
         }
 
         try {
-            // If any item is marked as isNew, create it via medicamentApi (port 8082) first!
             const processedItems = [];
             const updatedMeds = [...availableMeds];
 
@@ -393,6 +437,107 @@ function DoctorDashboard() {
         }
     };
 
+    // ── MODIFICATION & SUPPRESSION DES ORDONNANCES ───────────────────────────
+    const handleOpenEditPrescription = (ord) => {
+        setEditingPrescriptionModal({
+            idOrdonnance: ord.idOrdonnance,
+            patientNom: ord.patientNom,
+            patientPrenom: ord.patientPrenom,
+            dateCreation: ord.dateCreation,
+            diagnostic: ord.diagnostic,
+            items: (ord.items || []).map((it) => ({
+                idPrescription: it.idPrescription,
+                idMedicament: it.idMedicament || "",
+                posologie: it.posologie || "1 cp matin et soir",
+                frequence: it.frequence || "Pendant repas",
+                duree: it.duree || "7 jours",
+                quantite: it.quantite || 1,
+                nomMedicament: it.nomMedicament,
+                dosageMedicament: it.dosageMedicament
+            }))
+        });
+    };
+
+    const handleAddEditPrescriptionItem = () => {
+        setEditingPrescriptionModal((prev) => ({
+            ...prev,
+            items: [
+                ...prev.items,
+                {
+                    idMedicament: availableMeds[0]?.idMedicament || "",
+                    posologie: "1 cp par jour",
+                    frequence: "Le matin",
+                    duree: "5 jours",
+                    quantite: 1
+                }
+            ]
+        }));
+    };
+
+    const handleRemoveEditPrescriptionItem = (index) => {
+        setEditingPrescriptionModal((prev) => ({
+            ...prev,
+            items: prev.items.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleEditPrescriptionItemChange = (index, field, value) => {
+        setEditingPrescriptionModal((prev) => {
+            const newItems = [...prev.items];
+            newItems[index] = { ...newItems[index], [field]: value };
+            return { ...prev, items: newItems };
+        });
+    };
+
+    const handleUpdatePrescriptionSubmit = async (e) => {
+        e.preventDefault();
+        if (!editingPrescriptionModal) return;
+
+        const processedItems = editingPrescriptionModal.items
+            .map((it) => ({
+                idMedicament: parseInt(it.idMedicament),
+                posologie: it.posologie || "1 cp",
+                frequence: it.frequence || "Par jour",
+                duree: it.duree || "7 jours",
+                quantite: parseInt(it.quantite) || 1
+            }))
+            .filter((it) => !isNaN(it.idMedicament) && it.idMedicament > 0);
+
+        if (processedItems.length === 0) {
+            showToast("Veuillez inclure au moins un médicament valide dans l'ordonnance.", "error");
+            return;
+        }
+
+        try {
+            await updatePrescription(editingPrescriptionModal.idOrdonnance, { items: processedItems });
+            showToast(`Ordonnance #${editingPrescriptionModal.idOrdonnance} mise à jour avec succès !`, "success");
+            setEditingPrescriptionModal(null);
+            loadPrescriptions();
+        } catch (error) {
+            showToast(error.message || "Erreur lors de la mise à jour de l'ordonnance.", "error");
+        }
+    };
+
+    const handleDeletePrescription = (ord) => {
+        setConfirmModalState({
+            title: "Supprimer l'ordonnance",
+            message: `Êtes-vous certain de vouloir supprimer l'ordonnance #${ord.idOrdonnance} de ${ord.patientPrenom} ${ord.patientNom} ? Cette opération est irréversible et supprimera également les lignes de prescription associées.`,
+            confirmText: "Accepter (Supprimer)",
+            cancelText: "Annuler",
+            variant: "danger",
+            onConfirm: async () => {
+                setConfirmModalState(null);
+                try {
+                    await deletePrescription(ord.idOrdonnance);
+                    showToast(`Ordonnance #${ord.idOrdonnance} supprimée avec succès.`, "success");
+                    loadPrescriptions();
+                } catch (error) {
+                    showToast(error.message || "Erreur lors de la suppression de l'ordonnance.", "error");
+                }
+            }
+        });
+    };
+
     // Filter patients by search
     const filteredPatients = patients.filter((p) => {
         const q = patientSearch.toLowerCase();
@@ -441,12 +586,25 @@ function DoctorDashboard() {
                 type={toast?.type}
                 onClose={() => setToast(null)}
             />
+
+            {/* Custom Pop-up Modal (French Annuler / Accepter) */}
+            <ConfirmModal
+                isOpen={Boolean(confirmModalState)}
+                title={confirmModalState?.title || "Confirmation"}
+                message={confirmModalState?.message || ""}
+                confirmText={confirmModalState?.confirmText || "Accepter"}
+                cancelText={confirmModalState?.cancelText || "Annuler"}
+                variant={confirmModalState?.variant || "primary"}
+                onConfirm={confirmModalState?.onConfirm || (() => setConfirmModalState(null))}
+                onCancel={() => setConfirmModalState(null)}
+            />
+
             {/* ── 1. ACCUEIL ── */}
             {path === "/doctor" && (
                 <>
                     <div className="welcome-banner doctor-banner">
                         <div>
-                            <span className="banner-label">ESPACE MÉDECIN</span>
+                            <span className="banner-label">ESPACE MÉDECIN · AL-ZAHRAOUI</span>
                             <h2>Votre activité médicale.</h2>
                             <p>Accédez à vos patients, consultations et rendez-vous.</p>
                         </div>
@@ -491,10 +649,10 @@ function DoctorDashboard() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
                         <div>
-                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", color: "#ffffff" }}>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.3rem", fontWeight: 700, color: "#0f172a" }}>
                                 Registre des Patients ({patients.length})
                             </h3>
-                            <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: "0.88rem" }}>
                                 Consultez les dossiers médicaux, coordonnées et antécédents de vos patients.
                             </p>
                         </div>
@@ -507,92 +665,92 @@ function DoctorDashboard() {
                             >
                                 <IconPlus size={15} /> Nouveau patient
                             </button>
-                            <div className="medicaments-recherche-wrapper">
-                                <span style={{ display: "grid", placeItems: "center" }}><IconSearch size={15} /></span>
+                            <div className="patient-search-wrapper">
+                                <span className="patient-search-icon"><IconSearch size={16} /></span>
                                 <input
                                     type="search"
-                                    className="medicaments-recherche"
+                                    className="patient-search-input"
                                     placeholder="Rechercher un patient…"
                                     value={patientSearch}
                                     onChange={(e) => setPatientSearch(e.target.value)}
-                                    style={{ width: "240px" }}
                                 />
                             </div>
                         </div>
                     </div>
 
                     {isLoadingPatients ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement des dossiers patients...
                         </div>
                     ) : filteredPatients.length === 0 ? (
-                        <div style={{ padding: "50px 20px", textAlign: "center", background: "rgba(255, 255, 255, 0.08)", borderRadius: "16px", border: "1px dashed rgba(255, 255, 255, 0.25)" }}>
-                            <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
+                        <div style={{ padding: "50px 20px", textAlign: "center", background: "#f8fafc", borderRadius: "16px", border: "1px dashed #cbd5e1" }}>
+                            <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px", color: "#64748b" }}>
                                 <IconPatientDossier size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucun patient trouvé</h4>
-                            <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucun patient trouvé</h4>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem" }}>
                                 {patientSearch ? "Aucun patient ne correspond à votre recherche." : "Aucun patient n'est encore enregistré dans la base."}
                             </p>
                         </div>
                     ) : (
-                        <div style={{ width: "100%", overflowX: "auto" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
+                        <div className="patient-table-wrapper">
+                            <table className="patient-table">
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#8affdf", fontSize: "0.78rem", textTransform: "uppercase" }}>
-                                        <th style={{ padding: "12px 10px" }}>Patient</th>
-                                        <th style={{ padding: "12px 10px" }}>Statut</th>
-                                        <th style={{ padding: "12px 10px" }}>Date de naissance</th>
-                                        <th style={{ padding: "12px 10px" }}>Email</th>
-                                        <th style={{ padding: "12px 10px" }}>Adresse</th>
-                                        <th style={{ padding: "12px 10px", textAlign: "center" }}>RDV</th>
-                                        <th style={{ padding: "12px 10px", textAlign: "center" }}>Consultations</th>
-                                        <th style={{ padding: "12px 10px", textAlign: "center" }}>Actions</th>
+                                    <tr>
+                                        <th style={{ width: "22%" }}>Patient</th>
+                                        <th style={{ width: "10%" }}>Statut</th>
+                                        <th style={{ width: "14%" }}>Date de naissance</th>
+                                        <th style={{ width: "18%" }}>Email</th>
+                                        <th style={{ width: "14%" }}>Adresse</th>
+                                        <th style={{ width: "6%", textAlign: "center" }}>RDV</th>
+                                        <th style={{ width: "6%", textAlign: "center" }}>Consultations</th>
+                                        <th style={{ width: "10%", textAlign: "center", minWidth: "120px" }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredPatients.map((p) => (
-                                        <tr key={p.idUtilisateur} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.12)", opacity: p.actif === false ? 0.65 : 1 }}>
-                                            <td style={{ padding: "14px 10px", fontWeight: 700, color: "#ffffff" }}>
-                                                <span style={{ display: "inline-flex", alignItems: "center", gap: "7px" }}>
-                                                    <IconUser size={15} /> {p.nom} {p.prenom}
+                                        <tr key={p.idUtilisateur} style={{ opacity: p.actif === false ? 0.65 : 1 }}>
+                                            <td>
+                                                <span className="patient-name-cell">
+                                                    <IconUser size={16} style={{ color: "#0284c7", flexShrink: 0 }} /> {p.nom} {p.prenom}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: "14px 10px" }}>
+                                            <td>
                                                 {p.actif !== false ? (
-                                                    <span className="app-badge badge-success" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                    <span className="badge-patient-active">
                                                         <IconCheck size={11} /> Actif
                                                     </span>
                                                 ) : (
-                                                    <span className="app-badge badge-cancelled" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                                    <span className="badge-patient-inactive">
                                                         <IconClose size={11} /> Inactif
                                                     </span>
                                                 )}
                                             </td>
-                                            <td style={{ padding: "14px 10px", opacity: 0.9 }}>
-                                                {p.dateNaissance || "Non renseignée"}
+                                            <td className="font-tabular" style={{ color: "#1e293b", fontWeight: 500 }}>
+                                                {formatFrenchDate(p.dateNaissance)}
                                             </td>
-                                            <td style={{ padding: "14px 10px", opacity: 0.85 }}>
+                                            <td style={{ color: "#334155", fontWeight: 500 }}>
                                                 {p.email}
                                             </td>
-                                            <td style={{ padding: "14px 10px", opacity: 0.85 }}>
+                                            <td style={{ color: "#475569" }}>
                                                 {p.adresse || "Non renseignée"}
                                             </td>
-                                            <td style={{ padding: "14px 10px", textAlign: "center", fontWeight: 700, color: "#8affdf" }}>
-                                                {p.totalRdv}
+                                            <td style={{ textAlign: "center" }}>
+                                                <span className="patient-count-pill font-tabular">{p.totalRdv || 0}</span>
                                             </td>
-                                            <td style={{ padding: "14px 10px", textAlign: "center", fontWeight: 700, color: "#80c4ff" }}>
-                                                {p.totalConsultations}
+                                            <td style={{ textAlign: "center" }}>
+                                                <span className="patient-count-pill-alt font-tabular">{p.totalConsultations || 0}</span>
                                             </td>
-                                            <td style={{ padding: "14px 10px", textAlign: "center" }}>
-                                                <div style={{ display: "inline-flex", gap: "6px" }}>
+                                            <td style={{ textAlign: "center" }}>
+                                                <div className="action-icon-group">
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelectedPatientModal(p)}
-                                                        className="btn btn-secondary"
-                                                        style={{ padding: "5px 10px", fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                                        className="action-icon-btn action-view"
+                                                        title="Voir la fiche patient"
+                                                        aria-label="Voir la fiche patient"
                                                     >
-                                                        <IconEye size={13} /> Fiche
+                                                        <IconEye size={15} />
                                                     </button>
                                                     <button
                                                         type="button"
@@ -604,18 +762,20 @@ function DoctorDashboard() {
                                                             dateNaissance: p.dateNaissance || "",
                                                             adresse: p.adresse || ""
                                                         })}
-                                                        className="btn btn-secondary"
-                                                        style={{ padding: "5px 10px", fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                                        className="action-icon-btn action-edit"
+                                                        title="Modifier le dossier patient"
+                                                        aria-label="Modifier le dossier patient"
                                                     >
-                                                        <IconEdit size={13} /> Modifier
+                                                        <IconEdit size={14} />
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleTogglePatientStatus(p)}
-                                                        className={p.actif !== false ? "btn btn-danger" : "btn btn-primary"}
-                                                        style={{ padding: "5px 10px", fontSize: "0.78rem" }}
+                                                        className={`action-icon-btn ${p.actif !== false ? "action-deactivate" : "action-activate"}`}
+                                                        title={p.actif !== false ? "Désactiver le patient" : "Réactiver le patient"}
+                                                        aria-label={p.actif !== false ? "Désactiver le patient" : "Réactiver le patient"}
                                                     >
-                                                        {p.actif !== false ? "Désactiver" : "Réactiver"}
+                                                        {p.actif !== false ? <IconTrash size={14} /> : <IconCheck size={14} />}
                                                     </button>
                                                 </div>
                                             </td>
@@ -636,7 +796,7 @@ function DoctorDashboard() {
                     </button>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                        <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#ffffff" }}>Planning des consultations</h3>
+                        <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>Planning des consultations</h3>
                         <button
                             type="button"
                             className="btn-action-principal"
@@ -654,7 +814,7 @@ function DoctorDashboard() {
                     )}
 
                     {isLoadingAppointments ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement du planning...
                         </div>
                     ) : appointments.length === 0 ? (
@@ -662,8 +822,8 @@ function DoctorDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconAppointmentCalendar size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucun rendez-vous dans votre agenda</h4>
-                            <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucun rendez-vous dans votre agenda</h4>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem" }}>
                                 Les demandes des patients adressées à votre cabinet s'afficheront ici.
                             </p>
                         </div>
@@ -671,8 +831,8 @@ function DoctorDashboard() {
                         <div style={{ width: "100%", overflowX: "auto" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#8affdf", fontSize: "0.78rem", textTransform: "uppercase" }}>
-                                        <th style={{ padding: "12px 10px" }}>Date & Heure</th>
+                                    <tr style={{ borderBottom: "2px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: "0.78rem", textTransform: "uppercase", fontWeight: 700 }}>
+                                        <th style={{ padding: "12px 10px" }}>Date &amp; Heure</th>
                                         <th style={{ padding: "12px 10px" }}>Patient</th>
                                         <th style={{ padding: "12px 10px" }}>Motif</th>
                                         <th style={{ padding: "12px 10px" }}>Statut</th>
@@ -682,7 +842,7 @@ function DoctorDashboard() {
                                 <tbody>
                                     {appointments.map((rdv) => (
                                         <tr key={rdv.idRdv} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.12)" }}>
-                                            <td className="font-tabular" style={{ padding: "14px 10px", fontWeight: 700, color: "#ffffff" }}>
+                                            <td className="font-tabular" style={{ padding: "14px 10px", fontWeight: 700, color: "#0f172a" }}>
                                                 {rdv.dateHeure}
                                             </td>
                                             <td style={{ padding: "14px 10px" }}>
@@ -705,14 +865,14 @@ function DoctorDashboard() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleUpdateStatus(rdv.idRdv, "CONFIRME")}
-                                                                style={{ background: "rgba(0, 150, 120, 0.35)", border: "1px solid #8affdf", color: "#8affdf", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#047857", border: "1px solid #065f46", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconCheck size={12} /> Confirmer
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleUpdateStatus(rdv.idRdv, "ANNULE")}
-                                                                style={{ background: "rgba(140, 20, 50, 0.35)", border: "1px solid #ff809b", color: "#ffb3c1", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconClose size={12} /> Annuler
                                                             </button>
@@ -725,14 +885,14 @@ function DoctorDashboard() {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleOpenConsultationForRdv(rdv)}
-                                                                style={{ background: "rgba(8, 121, 249, 0.35)", border: "1px solid #80c4ff", color: "#ffffff", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#0369a1", border: "1px solid #075985", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "5px" }}
                                                             >
                                                                 <IconStethoscope size={13} /> Consulter
                                                             </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setEditingRdv(rdv)}
-                                                                style={{ background: "rgba(255, 255, 255, 0.16)", border: "1px solid var(--med-bordure)", color: "#f6ffff", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                                style={{ background: "#0f172a", border: "1px solid #020617", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                             >
                                                                 <IconEdit size={12} /> Modifier
                                                             </button>
@@ -744,7 +904,7 @@ function DoctorDashboard() {
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingRdv(rdv)}
-                                                            style={{ background: "rgba(255, 193, 7, 0.2)", border: "1px solid #ffd54f", color: "#ffe082", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                            style={{ background: "#b45309", border: "1px solid #92400e", color: "#ffffff", padding: "6px 12px", borderRadius: "8px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                         >
                                                             <IconEdit size={12} /> Modifier / Rétablir
                                                         </button>
@@ -774,7 +934,7 @@ function DoctorDashboard() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
                         <div>
-                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", color: "#ffffff" }}>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
                                 Consultations Médicales ({consultations.length})
                             </h3>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
@@ -795,7 +955,7 @@ function DoctorDashboard() {
                     </div>
 
                     {isLoadingConsultations ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement des consultations...
                         </div>
                     ) : consultations.length === 0 ? (
@@ -803,7 +963,7 @@ function DoctorDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconConsultation size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucune consultation enregistrée</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucune consultation enregistrée</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 Démarrez une consultation à partir d'un rendez-vous confirmé ou via le bouton ci-dessus.
                             </p>
@@ -814,33 +974,32 @@ function DoctorDashboard() {
                                 <div key={c.idConsultation} className="ordonnance-card">
                                     <div className="ordonnance-meta">
                                         <div>
-                                            <span className="font-mono font-tabular" style={{ fontSize: "0.78rem", color: "#8affdf", fontWeight: 700 }}>
-                                                CONSULTATION #{c.idConsultation} • {c.dateConsultation}
+                                            <span className="font-mono font-tabular ordonnance-tag">
+                                                CONSULTATION #{c.idConsultation} • {formatFrenchDate(c.dateConsultation)}
                                             </span>
-                                            <h4 style={{ margin: "4px 0", color: "#ffffff", fontSize: "1.15rem" }}>
+                                            <h4 className="ordonnance-title">
                                                 Patient : {c.patientNom} {c.patientPrenom}
                                             </h4>
-                                            <div style={{ fontSize: "0.82rem", opacity: 0.8 }}>
-                                                Né(e) le : {c.patientDateNaissance || "Non renseigné"} • {c.patientEmail}
+                                            <div className="ordonnance-subtitle">
+                                                Né(e) le : {formatFrenchDate(c.patientDateNaissance)} • {c.patientEmail}
                                             </div>
                                         </div>
-                                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                        <div className="ordonnance-actions-bar">
                                             <button
                                                 type="button"
-                                                className="btn-action-principal"
-                                                style={{ minHeight: "36px", padding: "6px 12px", fontSize: "0.82rem", background: "rgba(255, 255, 255, 0.16)", border: "1px solid var(--med-bordure)", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                                className="btn-ord-edit"
                                                 onClick={() => setEditingConsultationModal({
                                                     idConsultation: c.idConsultation,
                                                     diagnostic: c.diagnostic,
                                                     observations: c.observations || ""
                                                 })}
                                             >
-                                                <IconEdit size={13} /> Modifier
+                                                <IconEdit size={14} /> Modifier
                                             </button>
                                             <button
                                                 type="button"
                                                 className="btn-action-principal"
-                                                style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                                style={{ minHeight: "36px", padding: "8px 16px", fontSize: "0.83rem" }}
                                                 onClick={() => {
                                                     setPrescriptionForm({
                                                         idConsultation: c.idConsultation,
@@ -853,18 +1012,18 @@ function DoctorDashboard() {
                                             </button>
                                         </div>
                                     </div>
-                                    <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "14px", borderRadius: "12px", marginBottom: "10px" }}>
-                                        <strong style={{ color: "#8affdf", fontSize: "0.85rem", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>
+                                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "14px 16px", borderRadius: "12px", marginBottom: "12px" }}>
+                                        <strong style={{ color: "#0f766e", fontSize: "0.82rem", textTransform: "uppercase", display: "block", marginBottom: "4px", letterSpacing: "0.03em" }}>
                                             Diagnostic médical
                                         </strong>
-                                        <p style={{ margin: 0, fontSize: "0.92rem", color: "#ffffff" }}>{c.diagnostic}</p>
+                                        <p style={{ margin: 0, fontSize: "0.95rem", color: "#1e293b", fontWeight: 500 }}>{c.diagnostic}</p>
                                     </div>
                                     {c.observations && (
-                                        <div style={{ background: "rgba(255, 255, 255, 0.04)", padding: "12px", borderRadius: "10px" }}>
-                                            <strong style={{ color: "#f6ffff", fontSize: "0.8rem", opacity: 0.8, display: "block", marginBottom: "3px" }}>
+                                        <div style={{ background: "#f1f5f9", border: "1px solid #e2e8f0", padding: "12px 16px", borderRadius: "10px" }}>
+                                            <strong style={{ color: "#475569", fontSize: "0.78rem", textTransform: "uppercase", display: "block", marginBottom: "3px", letterSpacing: "0.03em" }}>
                                                 Observations cliniques &amp; Antécédents
                                             </strong>
-                                            <p style={{ margin: 0, fontSize: "0.86rem", opacity: 0.9, whiteSpace: "pre-line" }}>{c.observations}</p>
+                                            <p style={{ margin: 0, fontSize: "0.88rem", color: "#334155", whiteSpace: "pre-line" }}>{c.observations}</p>
                                         </div>
                                     )}
                                 </div>
@@ -883,11 +1042,11 @@ function DoctorDashboard() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
                         <div>
-                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", color: "#ffffff" }}>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
                                 Ordonnances Médicales ({prescriptions.length})
                             </h3>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
-                                Rédigez et imprimez des ordonnances médicamenteuses officielles.
+                                Rédigez, modifiez et imprimez des ordonnances médicamenteuses officielles.
                             </p>
                         </div>
                         <button
@@ -907,7 +1066,7 @@ function DoctorDashboard() {
                     </div>
 
                     {isLoadingPrescriptions ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#8affdf" }}>
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
                             Chargement des ordonnances...
                         </div>
                     ) : prescriptions.length === 0 ? (
@@ -915,7 +1074,7 @@ function DoctorDashboard() {
                             <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px" }}>
                                 <IconPrescription size={44} />
                             </div>
-                            <h4 style={{ margin: "0 0 6px 0", color: "#ffffff", fontSize: "1.1rem" }}>Aucune ordonnance émise</h4>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucune ordonnance émise</h4>
                             <p style={{ margin: 0, opacity: 0.8, fontSize: "0.85rem" }}>
                                 Créez une ordonnance à la fin d'une consultation en cliquant sur le bouton ci-dessus.
                             </p>
@@ -926,49 +1085,64 @@ function DoctorDashboard() {
                                 <div key={ord.idOrdonnance} className="ordonnance-card">
                                     <div className="ordonnance-meta">
                                         <div>
-                                            <span className="font-mono font-tabular" style={{ fontSize: "0.78rem", color: "#8affdf", fontWeight: 700 }}>
-                                                ORDONNANCE #{ord.idOrdonnance} • {ord.dateCreation}
+                                            <span className="font-mono font-tabular ordonnance-tag">
+                                                ORDONNANCE #{ord.idOrdonnance} • {formatFrenchDate(ord.dateCreation)}
                                             </span>
-                                            <h4 style={{ margin: "4px 0", color: "#ffffff", fontSize: "1.15rem" }}>
+                                            <h4 className="ordonnance-title">
                                                 Patient : {ord.patientNom} {ord.patientPrenom}
                                             </h4>
-                                            <span style={{ fontSize: "0.82rem", opacity: 0.8 }}>
-                                                Diagnostic associé : {ord.diagnostic || "Général"}
+                                            <span className="ordonnance-subtitle">
+                                                Diagnostic associé : <strong>{ord.diagnostic || "Général"}</strong>
                                             </span>
                                         </div>
-                                        <button
-                                            type="button"
-                                            className="btn-action-principal"
-                                            style={{ minHeight: "38px", padding: "8px 16px", fontSize: "0.82rem", display: "inline-flex", alignItems: "center", gap: "6px" }}
-                                            onClick={() => setPrintPrescription(ord)}
-                                        >
-                                            <IconPrint size={14} /> Imprimer / Aperçu
-                                        </button>
+                                        <div className="ordonnance-actions-bar">
+                                            <button
+                                                type="button"
+                                                className="btn-ord-print"
+                                                onClick={() => setPrintPrescription(ord)}
+                                            >
+                                                <IconPrint size={14} /> Imprimer / Aperçu
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-ord-edit"
+                                                onClick={() => handleOpenEditPrescription(ord)}
+                                            >
+                                                <IconEdit size={14} /> Modifier
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-ord-delete"
+                                                onClick={() => handleDeletePrescription(ord)}
+                                            >
+                                                <IconTrash size={14} /> Supprimer
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
                                         <thead>
-                                            <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.2)", color: "#8affdf", fontSize: "0.75rem", textTransform: "uppercase" }}>
-                                                <th style={{ padding: "8px 6px", textAlign: "left" }}>Médicament</th>
-                                                <th style={{ padding: "8px 6px", textAlign: "left" }}>Posologie</th>
-                                                <th style={{ padding: "8px 6px", textAlign: "left" }}>Fréquence</th>
-                                                <th style={{ padding: "8px 6px", textAlign: "left" }}>Durée</th>
-                                                <th style={{ padding: "8px 6px", textAlign: "center" }}>Qté</th>
+                                            <tr style={{ borderBottom: "1px solid #e2e8f0", color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                                                <th style={{ padding: "10px 8px", textAlign: "left" }}>Médicament</th>
+                                                <th style={{ padding: "10px 8px", textAlign: "left" }}>Posologie</th>
+                                                <th style={{ padding: "10px 8px", textAlign: "left" }}>Fréquence</th>
+                                                <th style={{ padding: "10px 8px", textAlign: "left" }}>Durée</th>
+                                                <th style={{ padding: "10px 8px", textAlign: "center" }}>Qté</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {ord.items && ord.items.map((it) => (
-                                                <tr key={it.idPrescription} style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                                                    <td style={{ padding: "10px 6px", fontWeight: 600, color: "#ffffff" }}>
+                                            {ord.items && ord.items.map((it, idx) => (
+                                                <tr key={it.idPrescription || idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                                    <td style={{ padding: "12px 8px", fontWeight: 600, color: "#1e293b" }}>
                                                         <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                                            <IconPills size={14} /> {it.nomMedicament}
+                                                            <IconPills size={14} style={{ color: "#0284c7" }} /> {it.nomMedicament}
                                                         </span>
-                                                        <span style={{ opacity: 0.7, fontWeight: 400, marginLeft: "6px" }}>({it.dosageMedicament})</span>
+                                                        <span style={{ color: "#64748b", fontWeight: 400, marginLeft: "6px" }}>({it.dosageMedicament})</span>
                                                     </td>
-                                                    <td style={{ padding: "10px 6px" }}>{it.posologie}</td>
-                                                    <td style={{ padding: "10px 6px" }}>{it.frequence}</td>
-                                                    <td style={{ padding: "10px 6px" }}>{it.duree}</td>
-                                                    <td className="font-tabular" style={{ padding: "10px 6px", textAlign: "center", fontWeight: 700, color: "#8affdf" }}>
+                                                    <td style={{ padding: "12px 8px", color: "#334155" }}>{it.posologie}</td>
+                                                    <td style={{ padding: "12px 8px", color: "#334155" }}>{it.frequence}</td>
+                                                    <td style={{ padding: "12px 8px", color: "#334155" }}>{it.duree}</td>
+                                                    <td className="font-tabular" style={{ padding: "12px 8px", textAlign: "center", fontWeight: 700, color: "#0284c7" }}>
                                                         {it.quantite}
                                                     </td>
                                                 </tr>
@@ -1121,7 +1295,7 @@ function DoctorDashboard() {
                                 <button
                                     type="button"
                                     onClick={handleAddPrescriptionItem}
-                                    style={{ background: "rgba(8, 199, 182, 0.25)", border: "1px solid #8affdf", color: "#8affdf", padding: "4px 10px", borderRadius: "8px", fontSize: "0.78rem", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                    style={{ background: "#047857", border: "1px solid #065f46", color: "#ffffff", padding: "5px 12px", borderRadius: "8px", fontSize: "0.78rem", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "5px" }}
                                 >
                                     <IconPlus size={13} /> Ajouter un médicament
                                 </button>
@@ -1246,7 +1420,7 @@ function DoctorDashboard() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemovePrescriptionItem(index)}
-                                                style={{ background: "rgba(255, 80, 110, 0.25)", border: "1px solid #ff809b", color: "#ff809b", padding: "12px 14px", borderRadius: "10px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                                                style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "12px 14px", borderRadius: "10px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
                                                 title="Supprimer cette ligne"
                                             >
                                                 <IconTrash size={16} />
@@ -1281,22 +1455,22 @@ function DoctorDashboard() {
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px" }}>
-                            <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "12px", borderRadius: "10px" }}>
-                                <span style={{ opacity: 0.7, fontSize: "0.75rem", textTransform: "uppercase" }}>Email</span>
-                                <div style={{ fontWeight: 600, color: "#ffffff" }}>{selectedPatientModal.email}</div>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Email</span>
+                                <div style={{ fontWeight: 600, color: "#0f172a" }}>{selectedPatientModal.email}</div>
                             </div>
-                            <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "12px", borderRadius: "10px" }}>
-                                <span style={{ opacity: 0.7, fontSize: "0.75rem", textTransform: "uppercase" }}>Date de naissance</span>
-                                <div className="font-tabular" style={{ fontWeight: 600, color: "#ffffff" }}>{selectedPatientModal.dateNaissance || "Non renseignée"}</div>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Date de naissance</span>
+                                <div className="font-tabular" style={{ fontWeight: 600, color: "#0f172a" }}>{formatFrenchDate(selectedPatientModal.dateNaissance)}</div>
                             </div>
-                            <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "12px", borderRadius: "10px" }}>
-                                <span style={{ opacity: 0.7, fontSize: "0.75rem", textTransform: "uppercase" }}>Adresse</span>
-                                <div style={{ fontWeight: 600, color: "#ffffff" }}>{selectedPatientModal.adresse || "Non renseignée"}</div>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Adresse</span>
+                                <div style={{ fontWeight: 600, color: "#0f172a" }}>{selectedPatientModal.adresse || "Non renseignée"}</div>
                             </div>
-                            <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "12px", borderRadius: "10px" }}>
-                                <span style={{ opacity: 0.7, fontSize: "0.75rem", textTransform: "uppercase" }}>Activité</span>
-                                <div className="font-tabular" style={{ fontWeight: 600, color: "#8affdf" }}>
-                                    {selectedPatientModal.totalRdv} Rendez-vous • {selectedPatientModal.totalConsultations} Consultations
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Activité</span>
+                                <div className="font-tabular" style={{ fontWeight: 700, color: "#0f766e" }}>
+                                    {selectedPatientModal.totalRdv || 0} Rendez-vous • {selectedPatientModal.totalConsultations || 0} Consultations
                                 </div>
                             </div>
                         </div>
@@ -1328,7 +1502,7 @@ function DoctorDashboard() {
             {/* ── MODAL 5 : IMPRESSION ORDONNANCE (MÉDECIN) ── */}
             {printPrescription && (
                 <div className="modal-overlay" onClick={() => setPrintPrescription(null)}>
-                    <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ background: "#ffffff", color: "#1f2937", maxWidth: "620px" }}>
+                    <div className="modal-glass printable-ordonnance" onClick={(e) => e.stopPropagation()} style={{ background: "#ffffff", color: "#1f2937", maxWidth: "680px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #0879f9", paddingBottom: "14px", marginBottom: "20px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                 <div style={{ color: "#0879f9" }}>
@@ -1341,6 +1515,7 @@ function DoctorDashboard() {
                             </div>
                             <button
                                 type="button"
+                                className="print-hide"
                                 onClick={() => setPrintPrescription(null)}
                                 style={{ background: "#f3f4f6", border: "none", borderRadius: "50%", width: "30px", height: "30px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 aria-label="Fermer"
@@ -1354,7 +1529,7 @@ function DoctorDashboard() {
                                 <strong style={{ color: "#111827" }}>Patient :</strong> {printPrescription.patientPrenom} {printPrescription.patientNom}
                             </div>
                             <div className="font-tabular">
-                                <strong style={{ color: "#111827" }}>Date :</strong> {printPrescription.dateCreation}
+                                <strong style={{ color: "#111827" }}>Date :</strong> {formatFrenchDate(printPrescription.dateCreation)}
                             </div>
                         </div>
 
@@ -1381,10 +1556,10 @@ function DoctorDashboard() {
                             </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: "10px", marginTop: "24px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
+                        <div className="print-hide" style={{ display: "flex", gap: "10px", marginTop: "24px", borderTop: "1px solid #e5e7eb", paddingTop: "16px" }}>
                             <button
                                 type="button"
-                                style={{ flex: 1, padding: "10px 16px", borderRadius: "10px", background: "#0879f9", color: "white", border: "none", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                                style={{ flex: 1, padding: "10px 16px", borderRadius: "10px", background: "#0369a1", color: "white", border: "none", fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
                                 onClick={() => window.print()}
                             >
                                 <IconPrint size={16} /> Imprimer l'ordonnance
@@ -1613,6 +1788,145 @@ function DoctorDashboard() {
                                     <IconCheck size={16} /> Sauvegarder les corrections
                                 </button>
                                 <button type="button" className="med-btn med-btn-secondaire" onClick={() => setEditingConsultationModal(null)}>
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL 9 : MODIFIER ORDONNANCE ── */}
+            {editingPrescriptionModal && (
+                <div className="modal-overlay" onClick={() => setEditingPrescriptionModal(null)}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "780px" }}>
+                        <div className="modal-header">
+                            <h3 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                                <IconEdit size={18} /> Modifier l'Ordonnance #{editingPrescriptionModal.idOrdonnance}
+                            </h3>
+                            <button type="button" className="btn-close-modal" onClick={() => setEditingPrescriptionModal(null)}>
+                                <IconClose size={16} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleUpdatePrescriptionSubmit}>
+                            <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "12px 16px", borderRadius: "10px", marginBottom: "16px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                                <div>
+                                    <span style={{ fontSize: "0.75rem", opacity: 0.8, textTransform: "uppercase" }}>Patient</span>
+                                    <div style={{ fontWeight: 700, color: "#ffffff" }}>
+                                        {editingPrescriptionModal.patientPrenom} {editingPrescriptionModal.patientNom}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: "0.75rem", opacity: 0.8, textTransform: "uppercase" }}>Diagnostic</span>
+                                    <div style={{ fontWeight: 600, color: "#8affdf" }}>
+                                        {editingPrescriptionModal.diagnostic || "Général"}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: "0.75rem", opacity: 0.8, textTransform: "uppercase" }}>Date d'émission</span>
+                                    <div className="font-tabular" style={{ fontWeight: 600, color: "#ffffff" }}>
+                                        {formatFrenchDate(editingPrescriptionModal.dateCreation)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "16px 0 10px" }}>
+                                <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#8affdf", textTransform: "uppercase" }}>
+                                    Médicaments prescrits ({editingPrescriptionModal.items.length})
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleAddEditPrescriptionItem}
+                                    style={{ background: "#047857", border: "1px solid #065f46", color: "#ffffff", padding: "5px 12px", borderRadius: "8px", fontSize: "0.78rem", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                >
+                                    <IconPlus size={13} /> Ajouter une ligne
+                                </button>
+                            </div>
+
+                            <div style={{ maxHeight: "380px", overflowY: "auto", paddingRight: "4px" }}>
+                                {editingPrescriptionModal.items.map((item, index) => (
+                                    <div key={index} style={{ background: "rgba(255, 255, 255, 0.08)", padding: "14px", borderRadius: "12px", marginBottom: "12px", border: "1px solid rgba(255, 255, 255, 0.15)" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px", marginBottom: "10px" }}>
+                                            <div>
+                                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#8affdf", display: "block", marginBottom: "4px" }}>
+                                                    Médicament
+                                                </label>
+                                                <select
+                                                    value={item.idMedicament}
+                                                    onChange={(e) => handleEditPrescriptionItemChange(index, "idMedicament", e.target.value)}
+                                                    required
+                                                >
+                                                    <option value="">-- Choisir un médicament --</option>
+                                                    {availableMeds.map((m) => (
+                                                        <option key={m.idMedicament} value={m.idMedicament}>
+                                                            {m.nom} ({m.dosage})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#f6ffff", opacity: 0.9, display: "block", marginBottom: "4px" }}>
+                                                    Quantité (boîtes)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    className="font-tabular"
+                                                    value={item.quantite}
+                                                    onChange={(e) => handleEditPrescriptionItemChange(index, "quantite", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "10px", alignItems: "flex-end" }}>
+                                            <div>
+                                                <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Posologie</label>
+                                                <input
+                                                    type="text"
+                                                    value={item.posologie}
+                                                    onChange={(e) => handleEditPrescriptionItemChange(index, "posologie", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Fréquence</label>
+                                                <input
+                                                    type="text"
+                                                    value={item.frequence}
+                                                    onChange={(e) => handleEditPrescriptionItemChange(index, "frequence", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Durée</label>
+                                                <input
+                                                    type="text"
+                                                    value={item.duree}
+                                                    onChange={(e) => handleEditPrescriptionItemChange(index, "duree", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            {editingPrescriptionModal.items.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveEditPrescriptionItem(index)}
+                                                    style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "10px 12px", borderRadius: "10px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                                                    title="Supprimer cette ligne"
+                                                >
+                                                    <IconTrash size={15} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+                                <button type="submit" className="btn-action-principal" style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                                    <IconCheck size={16} /> Enregistrer les modifications
+                                </button>
+                                <button type="button" className="med-btn med-btn-secondaire" onClick={() => setEditingPrescriptionModal(null)}>
                                     Annuler
                                 </button>
                             </div>

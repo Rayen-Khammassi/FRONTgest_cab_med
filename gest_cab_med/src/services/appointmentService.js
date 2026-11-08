@@ -12,8 +12,7 @@ export async function getDoctors() {
             throw new Error(`Erreur serveur (${response.status})`);
         }
         return await response.json();
-    } catch (err) {
-        console.error("[appointmentService] Erreur lors de la récupération des médecins:", err);
+    } catch {
         return [];
     }
 }
@@ -43,8 +42,7 @@ export async function getAppointmentsByPatient(patientId) {
         const response = await fetch(`${API_BASE}/appointments?patient_id=${patientId}`);
         if (!response.ok) return [];
         return await response.json();
-    } catch (err) {
-        console.error("[appointmentService] Erreur appointments patient:", err);
+    } catch {
         return [];
     }
 }
@@ -57,8 +55,7 @@ export async function getAppointmentsByDoctor(doctorId) {
         const response = await fetch(`${API_BASE}/appointments?doctor_id=${doctorId}`);
         if (!response.ok) return [];
         return await response.json();
-    } catch (err) {
-        console.error("[appointmentService] Erreur appointments docteur:", err);
+    } catch {
         return [];
     }
 }
@@ -71,8 +68,7 @@ export async function getAllAppointments() {
         const response = await fetch(`${API_BASE}/appointments`);
         if (!response.ok) return [];
         return await response.json();
-    } catch (err) {
-        console.error("[appointmentService] Erreur all appointments:", err);
+    } catch {
         return [];
     }
 }
