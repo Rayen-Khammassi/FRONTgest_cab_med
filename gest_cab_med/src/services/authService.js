@@ -4,6 +4,11 @@ const API_BASE = (
 
 const API_URL = `${API_BASE}/api/auth`;
 
+// Nettoyage immédiat de tout résidu historique de session dans sessionStorage
+try {
+    sessionStorage.removeItem("currentUser");
+} catch {}
+
 export async function loginUser(login, password) {
     const response = await fetch(`${API_URL}/login`, {
         method: "POST",
@@ -23,19 +28,56 @@ export async function loginUser(login, password) {
 }
 
 export function saveUser(user) {
-    sessionStorage.setItem("currentUser", JSON.stringify(user));
+    if (!user) return;
+    const safeUser = {
+        idUtilisateur: user.idUtilisateur,
+        nom: user.nom,
+        prenom: user.prenom,
+        login: user.login,
+        role: user.role,
+        token: user.token || null,
+    };
+    const serialized = JSON.stringify(safeUser);
+    try {
+        localStorage.setItem("currentUser", serialized);
+    } catch (e) {
+        console.warn("Could not save to localStorage", e);
+    }
+    // Nettoyer systématiquement sessionStorage pour éviter toute session fantôme par onglet
+    try {
+        sessionStorage.removeItem("currentUser");
+    } catch {}
 }
 
 export function getUser() {
-    const user = sessionStorage.getItem("currentUser");
+    try {
+        const raw = localStorage.getItem("currentUser");
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
 
-    return user ? JSON.parse(user) : null;
+export function getAuthToken() {
+    return getUser()?.token || null;
+}
+
+export function getAuthHeaders() {
+    const token = getAuthToken();
+    return token ? { "Authorization": `Bearer ${token}` } : {};
 }
 
 export function logoutUser() {
-    sessionStorage.removeItem("currentUser");
+    try {
+        localStorage.removeItem("currentUser");
+    } catch (e) {
+        console.warn("Could not remove from localStorage", e);
+    }
+    try {
+        sessionStorage.removeItem("currentUser");
+    } catch {}
 }
 
 export function isAuthenticated() {
-    return getUser() !== null;
+    return !!getUser();
 }

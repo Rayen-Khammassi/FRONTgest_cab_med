@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import "./Login.css";
 import { useNavigate } from "react-router-dom";
 import { loginUser, saveUser } from "../services/authService";
-import { LogoAlZahraoui } from "../components/MedicalIcons";
+import { LogoAlZahrawi } from "../components/MedicalIcons";
 
 function Login() {
     const [introFinished, setIntroFinished] = useState(false);
@@ -132,11 +132,10 @@ function Login() {
         <main className={`auth-page ${introFinished ? "intro-finished" : ""}`}>
 
             {/* Background decoration */}
-            <div className="background-glow glow-one" />
-            <div className="background-glow glow-two" />
-            <div className="background-glow glow-three" />
-
             <div className="medical-scene" aria-hidden="true">
+                <div className="background-glow glow-one" />
+                <div className="background-glow glow-two" />
+                <div className="background-glow glow-three" />
                 <span className="medical-decoration decoration-heart">♥</span>
                 <span className="medical-decoration decoration-cross">✚</span>
                 <span className="medical-decoration decoration-pill">✚</span>
@@ -151,11 +150,11 @@ function Login() {
             <div className="auth-content">
 
                 <header className="brand">
-                    <div className="brand-logo-pure" aria-label="Logo Al-Zahraoui">
-                        <LogoAlZahraoui size={78} />
+                    <div className="brand-logo-pure" aria-label="Logo Al-Zahrawi">
+                        <LogoAlZahrawi size={78} />
                     </div>
                     <div className="brand-text">
-                        <h1 className="brand-title-authentic">Al-Zahraoui</h1>
+                        <h1 className="brand-title-authentic">Al-Zahrawi</h1>
                         <p className="brand-subtitle-authentic">Cabinet Médical · Système de gestion</p>
                     </div>
                 </header>
@@ -318,7 +317,7 @@ function Login() {
 
                     <footer className="panel-footer">
                         <p>
-                            Al-Zahraoui · Système médical sécurisé · Conforme RGPD santé
+                            Al-Zahrawi · Système médical sécurisé · Conforme RGPD santé
                         </p>
                     </footer>
                 </section>

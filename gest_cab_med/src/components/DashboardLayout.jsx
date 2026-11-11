@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, logoutUser } from "../services/authService";
 import {
-    LogoAlZahraoui,
+    LogoAlZahrawi,
     IconCabinetHome,
     IconAppointmentCalendar,
     IconRequestAppointment,
@@ -13,7 +13,8 @@ import {
     IconFirstAidBox,
     IconHelpSupport,
     IconLogout,
-    IconMenu
+    IconMenu,
+    IconUser
 } from "./MedicalIcons";
 
 const roleNames = {
@@ -28,6 +29,7 @@ const roleMenus = {
         { icon: IconRequestAppointment, label: "Demander un rendez-vous", path: "/patient/appointments/request" },
         { icon: IconAppointmentCalendar, label: "Mes rendez-vous", path: "/patient/appointments" },
         { icon: IconPrescription, label: "Mes ordonnances", path: "/patient/prescriptions" },
+        { icon: IconUser, label: "Mes coordonnées", path: "/patient/profile" },
     ],
     DOCTEUR: [
         { icon: IconCabinetHome, label: "Accueil", path: "/doctor" },
@@ -39,6 +41,7 @@ const roleMenus = {
     ],
     SECRETAIRE: [
         { icon: IconCabinetHome, label: "Accueil", path: "/secretary" },
+        { icon: IconPatientDossier, label: "Gestion des patients", path: "/secretary/patients" },
         { icon: IconAppointmentCalendar, label: "Gestion des rendez-vous", path: "/secretary/appointments" },
         { icon: IconFirstAidBox, label: "Salle d'attente du jour", path: "/secretary/waiting-room" },
         { icon: IconConsultation, label: "Consultations administratives", path: "/secretary/consultations" },
@@ -82,10 +85,10 @@ function DashboardLayout({ role, title, subtitle, children }) {
             <aside className={`dashboard-sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
                 <div className="sidebar-brand">
                     <div className="brand-icon">
-                        <LogoAlZahraoui size={30} />
+                        <LogoAlZahrawi size={30} />
                     </div>
                     <div>
-                        <h2>Al-Zahraoui</h2>
+                        <h2>Al-Zahrawi</h2>
                         <span>Cabinet Médical</span>
                     </div>
                 </div>
@@ -152,7 +155,7 @@ function DashboardLayout({ role, title, subtitle, children }) {
                                 {roleNames[role]}
                             </span>
                             <span className="topbar-breadcrumb">
-                                Al-Zahraoui / Tableau de bord
+                                Al-Zahrawi / Tableau de bord
                             </span>
                         </div>
                     </div>

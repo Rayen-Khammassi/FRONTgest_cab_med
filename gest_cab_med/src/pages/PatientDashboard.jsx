@@ -2,14 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import NotificationToast from "../components/NotificationToast";
-import { getUser } from "../services/authService";
+import ConfirmModal from "../components/ConfirmModal";
+import { getUser, saveUser } from "../services/authService";
 import {
     getDoctors,
     createAppointment,
-    getAppointmentsByPatient
+    getAppointmentsByPatient,
+    cancelAppointment
 } from "../services/appointmentService";
 import {
-    getPrescriptionsByPatient
+    getPrescriptionsByPatient,
+    getPatientById,
+    updatePatient
 } from "../services/medicalService";
 import {
     IconRequestAppointment,
@@ -26,7 +30,7 @@ import {
     IconArrowRight,
     IconCalendar,
     IconUser,
-    LogoAlZahraoui
+    LogoAlZahrawi
 } from "../components/MedicalIcons";
 
 const cards = [
@@ -47,6 +51,12 @@ const cards = [
         title: "Mes ordonnances",
         description: "Retrouvez vos ordonnances et prescriptions médicales officielles.",
         path: "/patient/prescriptions",
+    },
+    {
+        icon: IconUser,
+        title: "Mes coordonnées",
+        description: "Consultez et mettez à jour votre email, adresse et informations de contact.",
+        path: "/patient/profile",
     },
 ];
 
@@ -91,11 +101,26 @@ const formatFrenchDate = (dateStr) => {
 function PatientDashboard() {
     const navigate = useNavigate();
     const location = useLocation();
-    const path = location.pathname;
+    const rawPath = location.pathname;
+    const path = rawPath.endsWith("/") && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
     const user = getUser();
 
     // Toast state
     const [toast, setToast] = useState(null);
+    const [confirmModalState, setConfirmModalState] = useState(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+    // Profile state
+    const [profileForm, setProfileForm] = useState({
+        nom: "",
+        prenom: "",
+        email: "",
+        dateNaissance: "",
+        adresse: ""
+    });
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+
 
     const showToast = (message, type = "success") => {
         setToast({ message, type });
@@ -146,6 +171,42 @@ function PatientDashboard() {
         return () => { isCancelled = true; };
     }, [path, user?.idUtilisateur]);
 
+
+    // Fetch profile data when visiting profile page
+    useEffect(() => {
+        let isCancelled = false;
+        if (path === "/patient/profile" && user?.idUtilisateur) {
+            setIsLoadingProfile(true);
+            getPatientById(user.idUtilisateur)
+                .then((data) => {
+                    if (!isCancelled && data) {
+                        setProfileForm({
+                            nom: data.nom || user.nom || "",
+                            prenom: data.prenom || user.prenom || "",
+                            email: data.email || user.email || "",
+                            dateNaissance: data.dateNaissance || "",
+                            adresse: data.adresse || ""
+                        });
+                        setIsLoadingProfile(false);
+                    }
+                })
+                .catch(() => {
+                    if (!isCancelled) {
+                        // Fallback to user data if getPatientById fails
+                        setProfileForm({
+                            nom: user.nom || "",
+                            prenom: user.prenom || "",
+                            email: user.email || "",
+                            dateNaissance: "",
+                            adresse: ""
+                        });
+                        setIsLoadingProfile(false);
+                    }
+                });
+        }
+        return () => { isCancelled = true; };
+    }, [path, user?.idUtilisateur]);
+
     // Fetch prescriptions when visiting prescriptions page
     useEffect(() => {
         let isCancelled = false;
@@ -164,6 +225,41 @@ function PatientDashboard() {
         }
         return () => { isCancelled = true; };
     }, [path, user?.idUtilisateur]);
+
+
+    const handleSaveProfile = async (e) => {
+        e.preventDefault();
+        if (!profileForm.email || !profileForm.email.includes("@")) {
+            showToast("Veuillez saisir une adresse email valide.", "error");
+            return;
+        }
+
+        setIsSavingProfile(true);
+        try {
+            await updatePatient(user.idUtilisateur, {
+                nom: profileForm.nom,
+                prenom: profileForm.prenom,
+                email: profileForm.email.trim(),
+                dateNaissance: profileForm.dateNaissance || null,
+                adresse: profileForm.adresse ? profileForm.adresse.trim() : null
+            });
+
+            // Update stored user profile
+            const updatedUser = {
+                ...user,
+                nom: profileForm.nom,
+                prenom: profileForm.prenom,
+                email: profileForm.email.trim()
+            };
+            saveUser(updatedUser);
+
+            showToast("Vos coordonnées ont été enregistrées avec succès !", "success");
+        } catch (error) {
+            showToast(error.message || "Erreur lors de la mise à jour des coordonnées.", "error");
+        } finally {
+            setIsSavingProfile(false);
+        }
+    };
 
     const handleCreateAppointment = async (e) => {
         e.preventDefault();
@@ -195,6 +291,34 @@ function PatientDashboard() {
         }
     };
 
+    const handleCancelAppointment = (idRdv) => {
+        setConfirmModalState({
+            title: "Annuler ce rendez-vous ?",
+            message: "Êtes-vous sûr de vouloir annuler ce rendez-vous ? Cette action est irréversible et libérera le créneau auprès du secrétariat.",
+            confirmText: "Oui, annuler",
+            cancelText: "Garder le rendez-vous",
+            variant: "danger",
+            onConfirm: async () => {
+                try {
+                    setIsCancelling(true);
+                    await cancelAppointment(idRdv);
+                    // Immediate state update without reload
+                    setAppointments((prev) =>
+                        prev.map((rdv) =>
+                            rdv.idRdv === idRdv ? { ...rdv, statut: "ANNULE" } : rdv
+                        )
+                    );
+                    showToast("Votre rendez-vous a été annulé avec succès.", "success");
+                } catch (error) {
+                    showToast(error.message || "Impossible d'annuler le rendez-vous.", "error");
+                } finally {
+                    setIsCancelling(false);
+                    setConfirmModalState(null);
+                }
+            }
+        });
+    };
+
     let title = "Bienvenue dans votre espace";
     let subtitle = "Retrouvez toutes vos informations médicales au même endroit.";
 
@@ -207,6 +331,9 @@ function PatientDashboard() {
     } else if (path.includes("prescriptions")) {
         title = "Mes ordonnances médicales";
         subtitle = "Consultez et imprimez vos prescriptions délivrées par le cabinet.";
+    } else if (path.includes("profile")) {
+        title = "Mes coordonnées personnelles";
+        subtitle = "Consultez et mettez à jour votre email, adresse et informations de contact.";
     }
 
     const getStatusBadge = (statut) => {
@@ -251,7 +378,7 @@ function PatientDashboard() {
                 <>
                     <div className="welcome-banner">
                         <div>
-                            <span className="banner-label">ESPACE PATIENT · AL-ZAHRAOUI</span>
+                            <span className="banner-label">ESPACE PATIENT · AL-ZAHRAWI</span>
                             <h2>Votre santé, notre engagement.</h2>
                             <p>Consultez vos rendez-vous, vos ordonnances officielles et communiquez avec votre cabinet.</p>
                         </div>
@@ -390,7 +517,7 @@ function PatientDashboard() {
                         <div>
                             <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>Mes rendez-vous ({appointments.length})</h3>
                             <p style={{ margin: "4px 0 0", opacity: 0.8, fontSize: "0.85rem" }}>
-                                Retrouvez le statut et l'historique de vos rendez-vous au cabinet Al-Zahraoui.
+                                Retrouvez le statut et l'historique de vos rendez-vous au cabinet Al-Zahrawi.
                             </p>
                         </div>
                         <button
@@ -432,6 +559,7 @@ function PatientDashboard() {
                                         <th>Spécialité</th>
                                         <th>Motif</th>
                                         <th>Statut</th>
+                                        <th style={{ textAlign: "center" }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -455,6 +583,41 @@ function PatientDashboard() {
                                             </td>
                                             <td>
                                                 {getStatusBadge(rdv.statut)}
+                                            </td>
+                                            <td style={{ textAlign: "center" }}>
+                                                {rdv.statut === "DEMANDE" ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCancelAppointment(rdv.idRdv)}
+                                                        style={{
+                                                            background: "rgba(239, 68, 68, 0.12)",
+                                                            color: "#ef4444",
+                                                            border: "1px solid rgba(239, 68, 68, 0.35)",
+                                                            borderRadius: "8px",
+                                                            padding: "5px 12px",
+                                                            fontSize: "0.78rem",
+                                                            fontWeight: 600,
+                                                            cursor: "pointer",
+                                                            display: "inline-flex",
+                                                            alignItems: "center",
+                                                            gap: "5px",
+                                                            transition: "all 0.2s ease"
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = "rgba(239, 68, 68, 0.22)";
+                                                            e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.55)";
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = "rgba(239, 68, 68, 0.12)";
+                                                            e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.35)";
+                                                        }}
+                                                        title="Annuler ce rendez-vous"
+                                                    >
+                                                        <IconClose size={12} /> Annuler
+                                                    </button>
+                                                ) : (
+                                                    <span style={{ color: "#64748b", fontSize: "0.85rem" }}>—</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -576,10 +739,10 @@ function PatientDashboard() {
                         <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #0879f9", paddingBottom: "14px", marginBottom: "20px" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                                 <div style={{ color: "#0879f9" }}>
-                                    <LogoAlZahraoui size={38} />
+                                    <LogoAlZahrawi size={38} />
                                 </div>
                                 <div>
-                                    <h2 style={{ margin: 0, color: "#0879f9", fontSize: "1.4rem", letterSpacing: "1px" }}>CABINET MÉDICAL AL-ZAHRAOUI</h2>
+                                    <h2 style={{ margin: 0, color: "#0879f9", fontSize: "1.4rem", letterSpacing: "1px" }}>CABINET MÉDICAL AL-ZAHRAWI</h2>
                                     <p style={{ margin: "3px 0 0", fontSize: "0.85rem", color: "#4b5563" }}>Dr. {printPrescription.docteurPrenom} {printPrescription.docteurNom} — {printPrescription.docteurSpecialite || "Médecine générale"}</p>
                                 </div>
                             </div>
@@ -666,6 +829,151 @@ function PatientDashboard() {
                     </div>
                 </div>
             )}
+
+
+            {/* ── 5. MES COORDONNÉES PERSONNELLES ── */}
+            {path === "/patient/profile" && (
+                <div className="medicaments-panneau" style={{ maxWidth: "780px", margin: "0 auto" }}>
+                    <button
+                        onClick={() => navigate("/patient")}
+                        className="btn-retour"
+                        style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                    >
+                        <IconArrowLeft size={16} /> Retour à l'accueil
+                    </button>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+                        <div style={{
+                            width: "56px",
+                            height: "56px",
+                            borderRadius: "16px",
+                            background: "linear-gradient(135deg, rgba(8, 145, 178, 0.2), rgba(13, 148, 136, 0.3))",
+                            border: "1px solid rgba(8, 145, 178, 0.4)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#0891b2"
+                        }}>
+                            <IconUser size={28} />
+                        </div>
+                        <div>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.35rem", fontWeight: 700, color: "#0f172a" }}>
+                                Mon Dossier Patient
+                            </h3>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: "0.88rem" }}>
+                                Coordonnées enregistrées au cabinet médical Al-Zahrawi.
+                            </p>
+                        </div>
+                    </div>
+
+                    {isLoadingProfile ? (
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0891b2", fontWeight: 600 }}>
+                            Chargement de vos coordonnées...
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSaveProfile} style={{ background: "rgba(255, 255, 255, 0.85)", backdropFilter: "blur(12px)", padding: "28px", borderRadius: "18px", border: "1px solid rgba(226, 232, 240, 0.8)", boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)" }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Nom *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={profileForm.nom}
+                                        onChange={(e) => setProfileForm({ ...profileForm, nom: e.target.value })}
+                                        required
+                                        style={{ background: "#f8fafc" }}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Prénom *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={profileForm.prenom}
+                                        onChange={(e) => setProfileForm({ ...profileForm, prenom: e.target.value })}
+                                        required
+                                        style={{ background: "#f8fafc" }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: "16px" }}>
+                                <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>
+                                    Adresse Email de contact *
+                                </label>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    value={profileForm.email}
+                                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                                    required
+                                    placeholder="patient@exemple.com"
+                                    style={{ background: "#ffffff" }}
+                                />
+                                <span style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "4px", display: "block" }}>
+                                    Cette adresse email est utilisée pour les notifications et vos confirmations de rendez-vous.
+                                </span>
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Date de naissance</label>
+                                    <input
+                                        type="date"
+                                        className="form-control font-tabular"
+                                        value={profileForm.dateNaissance}
+                                        onChange={(e) => setProfileForm({ ...profileForm, dateNaissance: e.target.value })}
+                                        style={{ background: "#f8fafc" }}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Adresse de résidence</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Ex: Tunis, Ariana, La Marsa..."
+                                        value={profileForm.adresse}
+                                        onChange={(e) => setProfileForm({ ...profileForm, adresse: e.target.value })}
+                                        style={{ background: "#ffffff" }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #f1f5f9", paddingTop: "20px" }}>
+                                <button
+                                    type="button"
+                                    className="med-btn med-btn-secondaire"
+                                    onClick={() => navigate("/patient")}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn-action-principal"
+                                    disabled={isSavingProfile}
+                                    style={{ minWidth: "220px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                                >
+                                    <IconCheck size={16} />
+                                    {isSavingProfile ? "Enregistrement..." : "Enregistrer mes coordonnées"}
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            )}
+
+            {/* Pop-up modal de confirmation d'annulation */}
+            <ConfirmModal
+                isOpen={Boolean(confirmModalState)}
+                title={confirmModalState?.title || "Confirmation"}
+                message={confirmModalState?.message || ""}
+                confirmText={confirmModalState?.confirmText || "Accepter"}
+                cancelText={confirmModalState?.cancelText || "Annuler"}
+                variant={confirmModalState?.variant || "danger"}
+                onConfirm={confirmModalState?.onConfirm || (() => setConfirmModalState(null))}
+                onCancel={() => setConfirmModalState(null)}
+                isLoading={isCancelling}
+            />
         </DashboardLayout>
     );
 }

@@ -1,5 +1,5 @@
 /**
- * AL-ZAHRAOUI — Medical Cabinet Service (Patients, Consultations, Ordonnances)
+ * AL-ZAHRAWI — Medical Cabinet Service (Patients, Consultations, Ordonnances)
  * Connects to port 8081 backend API.
  */
 
@@ -91,6 +91,12 @@ export async function updateConsultation(payload) {
     return request("/api/consultations", {
         method: "PUT",
         body: JSON.stringify(payload)
+    });
+}
+
+export async function deleteConsultation(id) {
+    return request(`/api/consultations/${id}`, {
+        method: "DELETE"
     });
 }
 

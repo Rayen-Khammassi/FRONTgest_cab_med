@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap');
 
 /* =================================================================
-   AL-ZAHRAOUI — THEME DASHBOARD (Cabinet Médical Moderne & Luminous)
-   Harmonisé avec la marque Al-Zahraoui, typographie Plus Jakarta Sans,
+   AL-ZAHRAWI — THEME DASHBOARD (Cabinet Médical Moderne & Luminous)
+   Harmonisé avec la marque AL-ZAHRAWI, typographie Plus Jakarta Sans,
    verre givré lumineux, contrastes cliniques de haute précision.
    ================================================================= */
 
@@ -1439,6 +1439,11 @@ svg {
 /* =================================================================
    9. CUSTOM SMOOTH SCROLLBAR
    ================================================================= */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(8, 127, 158, 0.25) transparent;
+}
+
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -1963,7 +1968,7 @@ button:disabled {
   font-style: normal;
 }
 
-/* Authentic Al-Zahraoui Headings, Navigation & Identity Elements */
+/* Authentic AL-ZAHRAWI Headings, Navigation & Identity Elements */
 .sidebar-brand h2,
 .dashboard-heading h1,
 .welcome-banner h2,

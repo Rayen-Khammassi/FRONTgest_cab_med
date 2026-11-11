@@ -1,10 +1,10 @@
 /**
- * AL-ZAHRAOUI — Cabinet Médical Vector Icons & Brand Emblem
+ * AL-ZAHRAWI — Cabinet Médical Vector Icons & Brand Emblem
  * Refined and styled inspired by Andalusian Polymath Abu al-Qasim al-Zahrawi.
  */
 
-// 0. Official Brand Logo Emblem (Al-Zahraoui)
-export function LogoAlZahraoui({ size = 32, className = "" }) {
+// 0. Official Brand Logo Emblem (Al-Zahrawi)
+export function LogoAlZahrawi({ size = 32, className = "" }) {
     return (
         <svg
             width={size}
@@ -13,7 +13,7 @@ export function LogoAlZahraoui({ size = 32, className = "" }) {
             fill="currentColor"
             xmlns="http://www.w3.org/2000/svg"
             className={className}
-            aria-label="Logo Al-Zahraoui"
+            aria-label="Logo Al-Zahrawi"
             style={{ display: "block" }}
         >
             <path d="M 882.507 309.449 C 883.952 310.162 885.226 311.715 885.87 313.159 C 943.595 442.674 1006.12 569.871 1064.07 699.275 C 1053.02 712.625 1041.56 729.058 1031.73 743.289 C 1026.92 736.704 1016.02 711.222 1011.77 701.964 C 1001.68 680.179 991.271 658.542 980.549 637.06 C 899.212 635.264 810.795 636.764 729.046 636.997 C 716.227 661.02 703.593 685.14 691.145 709.357 C 681.578 727.448 672.178 745.628 662.947 763.892 C 656.948 775.821 649.819 788.711 646.406 801.046 C 640.652 821.841 650.666 833.499 669.703 839.43 C 671.469 839.98 671.382 841.057 671.764 842.543 L 670.572 843.645 C 661.491 844.901 566.098 844.13 564.448 842.929 C 564.578 842.31 564.708 841.691 564.838 841.072 C 569.432 839.173 580.167 834.304 584.042 832.691 C 606.327 823.415 627.658 796.907 639.096 776.035 C 646.466 762.586 654.584 745.328 661.751 731.17 L 696.384 663.964 L 812.256 440.137 C 823.308 419.252 834.193 398.279 844.912 377.221 C 853.608 360.004 871.134 324.751 882.507 309.449 z M 737.277 620.163 L 850.5 620.167 L 973.081 620.075 C 961.615 595.018 866.23 388.328 860.178 382.83 C 853.264 392.346 837.262 426.37 830.899 438.306 C 799.287 498.716 768.079 559.336 737.277 620.163 z" />

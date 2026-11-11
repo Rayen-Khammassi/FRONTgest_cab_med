@@ -1,3 +1,5 @@
+import { getAuthHeaders } from "./authService";
+
 const API_BASE = (
     import.meta.env.VITE_MAIN_API_URL || "http://localhost:8081"
 ).replace(/\/$/, "") + "/api";
@@ -79,7 +81,10 @@ export async function getAllAppointments() {
 export async function updateAppointmentStatus(idRdv, statut) {
     const response = await fetch(`${API_BASE}/appointments`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders()
+        },
         body: JSON.stringify({ idRdv, statut }),
     });
 
@@ -88,4 +93,11 @@ export async function updateAppointmentStatus(idRdv, statut) {
         throw new Error(data.message || "Échec de la mise à jour du statut.");
     }
     return data;
+}
+
+/**
+ * Annule un rendez-vous (autorisé pour le patient tant que le statut est DEMANDE).
+ */
+export async function cancelAppointment(idRdv) {
+    return updateAppointmentStatus(idRdv, "ANNULE");
 }
