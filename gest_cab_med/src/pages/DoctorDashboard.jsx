@@ -1264,7 +1264,7 @@ function DoctorDashboard() {
             {/* ── MODAL 3 : NOUVELLE ORDONNANCE ── */}
             {showNewPrescriptionModal && (
                 <div className="modal-overlay" onClick={() => setShowNewPrescriptionModal(false)}>
-                    <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "750px" }}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Créer une Ordonnance Médicale</h3>
                             <button type="button" className="btn-close-modal" onClick={() => setShowNewPrescriptionModal(false)}>
@@ -1288,147 +1288,150 @@ function DoctorDashboard() {
                                 </select>
                             </div>
 
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "16px 0 10px" }}>
-                                <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#8affdf", textTransform: "uppercase" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "20px 0 12px" }}>
+                                <label style={{ fontSize: "0.84rem", fontWeight: 650, color: "#123f59", textTransform: "uppercase", letterSpacing: "0.02em" }}>
                                     Médicaments prescrits
                                 </label>
                                 <button
                                     type="button"
+                                    className="btn-action-principal"
                                     onClick={handleAddPrescriptionItem}
-                                    style={{ background: "#047857", border: "1px solid #065f46", color: "#ffffff", padding: "5px 12px", borderRadius: "8px", fontSize: "0.78rem", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                    style={{ minHeight: "34px", padding: "6px 14px", fontSize: "0.8rem", borderRadius: "10px", display: "inline-flex", alignItems: "center", gap: "6px" }}
                                 >
-                                    <IconPlus size={13} /> Ajouter un médicament
+                                    <IconPlus size={14} /> Ajouter un médicament
                                 </button>
                             </div>
 
-                            {prescriptionForm.items.map((item, index) => (
-                                <div key={index} style={{ background: "rgba(255, 255, 255, 0.08)", padding: "16px", borderRadius: "14px", marginBottom: "14px", border: "1px solid rgba(255, 255, 255, 0.18)" }}>
-                                    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px", marginBottom: "10px" }}>
-                                        <div>
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#8affdf" }}>
-                                                    {item.isNew ? "Nouveau médicament (hors catalogue)" : "Médicament du catalogue"}
-                                                </label>
+                            <div style={{ maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}>
+                                {prescriptionForm.items.map((item, index) => (
+                                    <div key={index} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                                    <label style={{ margin: 0, fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>
+                                                        {item.isNew ? "Nouveau médicament (hors catalogue)" : "Médicament du catalogue"}
+                                                    </label>
+                                                    {!item.isNew ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handlePrescriptionItemChange(index, "isNew", true)}
+                                                            style={{ background: "none", border: "none", color: "#087f9e", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                                                        >
+                                                            + Nouveau médicament ?
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handlePrescriptionItemChange(index, "isNew", false)}
+                                                            style={{ background: "none", border: "none", color: "#087f9e", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                                                        >
+                                                            Choisir dans le catalogue
+                                                        </button>
+                                                    )}
+                                                </div>
+
                                                 {!item.isNew ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handlePrescriptionItemChange(index, "isNew", true)}
-                                                        style={{ background: "none", border: "none", color: "#8affdf", fontSize: "0.75rem", cursor: "pointer", textDecoration: "underline" }}
+                                                    <select
+                                                        value={item.idMedicament}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === "__NEW__") {
+                                                                handlePrescriptionItemChange(index, "isNew", true);
+                                                                handlePrescriptionItemChange(index, "idMedicament", "");
+                                                            } else {
+                                                                handlePrescriptionItemChange(index, "idMedicament", e.target.value);
+                                                            }
+                                                        }}
+                                                        required
                                                     >
-                                                        + Nouveau médicament ?
-                                                    </button>
+                                                        <option value="">-- Choisir un médicament enregistré --</option>
+                                                        {availableMeds.map((m) => (
+                                                            <option key={m.idMedicament} value={m.idMedicament}>
+                                                                {m.nom} ({m.dosage})
+                                                            </option>
+                                                        ))}
+                                                        <option value="__NEW__" style={{ fontWeight: 700, color: "#087f9e" }}>
+                                                            + Créer et enregistrer un nouveau médicament...
+                                                        </option>
+                                                    </select>
                                                 ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handlePrescriptionItemChange(index, "isNew", false)}
-                                                        style={{ background: "none", border: "none", color: "#f6ffff", opacity: 0.8, fontSize: "0.75rem", cursor: "pointer", textDecoration: "underline" }}
-                                                    >
-                                                        Choisir dans le catalogue
-                                                    </button>
+                                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Nom (ex : Ibuprofène)"
+                                                            value={item.newNom || ""}
+                                                            onChange={(e) => handlePrescriptionItemChange(index, "newNom", e.target.value)}
+                                                            required
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Dosage (ex : 400 mg)"
+                                                            value={item.newDosage || ""}
+                                                            onChange={(e) => handlePrescriptionItemChange(index, "newDosage", e.target.value)}
+                                                            required
+                                                        />
+                                                    </div>
                                                 )}
                                             </div>
 
-                                            {!item.isNew ? (
-                                                <select
-                                                    value={item.idMedicament}
-                                                    onChange={(e) => {
-                                                        if (e.target.value === "__NEW__") {
-                                                            handlePrescriptionItemChange(index, "isNew", true);
-                                                            handlePrescriptionItemChange(index, "idMedicament", "");
-                                                        } else {
-                                                            handlePrescriptionItemChange(index, "idMedicament", e.target.value);
-                                                        }
-                                                    }}
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>
+                                                    Quantité (boîtes)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantite}
+                                                    onChange={(e) => handlePrescriptionItemChange(index, "quantite", e.target.value)}
                                                     required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: "grid", gridTemplateColumns: prescriptionForm.items.length > 1 ? "1fr 1fr 1fr auto" : "1fr 1fr 1fr", gap: "12px", alignItems: "flex-end" }}>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>Posologie</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex : 1 cp matin et soir"
+                                                    value={item.posologie}
+                                                    onChange={(e) => handlePrescriptionItemChange(index, "posologie", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>Fréquence</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex : Pendant les repas"
+                                                    value={item.frequence}
+                                                    onChange={(e) => handlePrescriptionItemChange(index, "frequence", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>Durée</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex : 7 jours"
+                                                    value={item.duree}
+                                                    onChange={(e) => handlePrescriptionItemChange(index, "duree", e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                            {prescriptionForm.items.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemovePrescriptionItem(index)}
+                                                    style={{ background: "#fee2e2", border: "1px solid #fecaca", color: "#dc2626", height: "46px", padding: "0 14px", borderRadius: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                                    title="Supprimer cette ligne"
                                                 >
-                                                    <option value="">-- Choisir un médicament enregistré --</option>
-                                                    {availableMeds.map((m) => (
-                                                        <option key={m.idMedicament} value={m.idMedicament}>
-                                                            {m.nom} ({m.dosage})
-                                                        </option>
-                                                    ))}
-                                                    <option value="__NEW__" style={{ fontWeight: 700, color: "#8affdf" }}>
-                                                        + Créer et enregistrer un nouveau médicament...
-                                                    </option>
-                                                </select>
-                                            ) : (
-                                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Nom (ex : Ibuprofène)"
-                                                        value={item.newNom || ""}
-                                                        onChange={(e) => handlePrescriptionItemChange(index, "newNom", e.target.value)}
-                                                        required
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Dosage (ex : 400 mg)"
-                                                        value={item.newDosage || ""}
-                                                        onChange={(e) => handlePrescriptionItemChange(index, "newDosage", e.target.value)}
-                                                        required
-                                                    />
-                                                </div>
+                                                    <IconTrash size={16} />
+                                                </button>
                                             )}
                                         </div>
-                                        <div>
-                                            <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#f6ffff", opacity: 0.9, display: "block", marginBottom: "4px" }}>
-                                                Quantité (boîtes)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                className="font-tabular"
-                                                value={item.quantite}
-                                                onChange={(e) => handlePrescriptionItemChange(index, "quantite", e.target.value)}
-                                                required
-                                            />
-                                        </div>
                                     </div>
-
-                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "10px", alignItems: "flex-end" }}>
-                                        <div>
-                                            <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Posologie</label>
-                                            <input
-                                                type="text"
-                                                placeholder="ex : 1 cp 3x/jour"
-                                                value={item.posologie}
-                                                onChange={(e) => handlePrescriptionItemChange(index, "posologie", e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Fréquence</label>
-                                            <input
-                                                type="text"
-                                                placeholder="ex : Pendant repas"
-                                                value={item.frequence}
-                                                onChange={(e) => handlePrescriptionItemChange(index, "frequence", e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Durée</label>
-                                            <input
-                                                type="text"
-                                                placeholder="ex : 7 jours"
-                                                value={item.duree}
-                                                onChange={(e) => handlePrescriptionItemChange(index, "duree", e.target.value)}
-                                                required
-                                            />
-                                        </div>
-                                        {prescriptionForm.items.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemovePrescriptionItem(index)}
-                                                style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "12px 14px", borderRadius: "10px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
-                                                title="Supprimer cette ligne"
-                                            >
-                                                <IconTrash size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
 
                             <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
                                 <button type="submit" className="btn-action-principal" style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
@@ -1797,9 +1800,10 @@ function DoctorDashboard() {
             )}
 
             {/* ── MODAL 9 : MODIFIER ORDONNANCE ── */}
+            {/* ── MODAL MODIFIER ORDONNANCE ── */}
             {editingPrescriptionModal && (
                 <div className="modal-overlay" onClick={() => setEditingPrescriptionModal(null)}>
-                    <div className="modal-glass" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "780px" }}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
                                 <IconEdit size={18} /> Modifier l'Ordonnance #{editingPrescriptionModal.idOrdonnance}
@@ -1809,46 +1813,47 @@ function DoctorDashboard() {
                             </button>
                         </div>
                         <form onSubmit={handleUpdatePrescriptionSubmit}>
-                            <div style={{ background: "rgba(255, 255, 255, 0.08)", padding: "12px 16px", borderRadius: "10px", marginBottom: "16px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                            <div style={{ background: "#f0fdfa", border: "1px solid #ccfbf1", padding: "12px 16px", borderRadius: "12px", marginBottom: "16px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
                                 <div>
-                                    <span style={{ fontSize: "0.75rem", opacity: 0.8, textTransform: "uppercase" }}>Patient</span>
-                                    <div style={{ fontWeight: 700, color: "#ffffff" }}>
+                                    <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#0f766e", textTransform: "uppercase", display: "block" }}>Patient</span>
+                                    <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.92rem" }}>
                                         {editingPrescriptionModal.patientPrenom} {editingPrescriptionModal.patientNom}
                                     </div>
                                 </div>
                                 <div>
-                                    <span style={{ fontSize: "0.75rem", opacity: 0.8, textTransform: "uppercase" }}>Diagnostic</span>
-                                    <div style={{ fontWeight: 600, color: "#8affdf" }}>
+                                    <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#0f766e", textTransform: "uppercase", display: "block" }}>Diagnostic</span>
+                                    <div style={{ fontWeight: 600, color: "#087f9e", fontSize: "0.92rem" }}>
                                         {editingPrescriptionModal.diagnostic || "Général"}
                                     </div>
                                 </div>
                                 <div>
-                                    <span style={{ fontSize: "0.75rem", opacity: 0.8, textTransform: "uppercase" }}>Date d'émission</span>
-                                    <div className="font-tabular" style={{ fontWeight: 600, color: "#ffffff" }}>
+                                    <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#0f766e", textTransform: "uppercase", display: "block" }}>Date d'émission</span>
+                                    <div className="font-tabular" style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.92rem" }}>
                                         {formatFrenchDate(editingPrescriptionModal.dateCreation)}
                                     </div>
                                 </div>
                             </div>
 
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "16px 0 10px" }}>
-                                <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#8affdf", textTransform: "uppercase" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "20px 0 12px" }}>
+                                <label style={{ fontSize: "0.84rem", fontWeight: 650, color: "#123f59", textTransform: "uppercase", letterSpacing: "0.02em" }}>
                                     Médicaments prescrits ({editingPrescriptionModal.items.length})
                                 </label>
                                 <button
                                     type="button"
+                                    className="btn-action-principal"
                                     onClick={handleAddEditPrescriptionItem}
-                                    style={{ background: "#047857", border: "1px solid #065f46", color: "#ffffff", padding: "5px 12px", borderRadius: "8px", fontSize: "0.78rem", cursor: "pointer", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "5px" }}
+                                    style={{ minHeight: "34px", padding: "6px 14px", fontSize: "0.8rem", borderRadius: "10px", display: "inline-flex", alignItems: "center", gap: "6px" }}
                                 >
-                                    <IconPlus size={13} /> Ajouter une ligne
+                                    <IconPlus size={14} /> Ajouter une ligne
                                 </button>
                             </div>
 
-                            <div style={{ maxHeight: "380px", overflowY: "auto", paddingRight: "4px" }}>
+                            <div style={{ maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}>
                                 {editingPrescriptionModal.items.map((item, index) => (
-                                    <div key={index} style={{ background: "rgba(255, 255, 255, 0.08)", padding: "14px", borderRadius: "12px", marginBottom: "12px", border: "1px solid rgba(255, 255, 255, 0.15)" }}>
-                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "10px", marginBottom: "10px" }}>
-                                            <div>
-                                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#8affdf", display: "block", marginBottom: "4px" }}>
+                                    <div key={index} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "16px", marginBottom: "14px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px", marginBottom: "12px" }}>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>
                                                     Médicament
                                                 </label>
                                                 <select
@@ -1864,14 +1869,13 @@ function DoctorDashboard() {
                                                     ))}
                                                 </select>
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: "0.78rem", fontWeight: 600, color: "#f6ffff", opacity: 0.9, display: "block", marginBottom: "4px" }}>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>
                                                     Quantité (boîtes)
                                                 </label>
                                                 <input
                                                     type="number"
                                                     min="1"
-                                                    className="font-tabular"
                                                     value={item.quantite}
                                                     onChange={(e) => handleEditPrescriptionItemChange(index, "quantite", e.target.value)}
                                                     required
@@ -1879,29 +1883,32 @@ function DoctorDashboard() {
                                             </div>
                                         </div>
 
-                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "10px", alignItems: "flex-end" }}>
-                                            <div>
-                                                <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Posologie</label>
+                                        <div style={{ display: "grid", gridTemplateColumns: editingPrescriptionModal.items.length > 1 ? "1fr 1fr 1fr auto" : "1fr 1fr 1fr", gap: "12px", alignItems: "flex-end" }}>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>Posologie</label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Ex : 1 cp matin et soir"
                                                     value={item.posologie}
                                                     onChange={(e) => handleEditPrescriptionItemChange(index, "posologie", e.target.value)}
                                                     required
                                                 />
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Fréquence</label>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>Fréquence</label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Ex : Pendant les repas"
                                                     value={item.frequence}
                                                     onChange={(e) => handleEditPrescriptionItemChange(index, "frequence", e.target.value)}
                                                     required
                                                 />
                                             </div>
-                                            <div>
-                                                <label style={{ fontSize: "0.75rem", opacity: 0.8, display: "block", marginBottom: "4px" }}>Durée</label>
+                                            <div className="form-champ" style={{ margin: 0 }}>
+                                                <label style={{ margin: "0 0 4px 0", fontSize: "0.82rem", fontWeight: 650, color: "#123f59" }}>Durée</label>
                                                 <input
                                                     type="text"
+                                                    placeholder="Ex : 7 jours"
                                                     value={item.duree}
                                                     onChange={(e) => handleEditPrescriptionItemChange(index, "duree", e.target.value)}
                                                     required
@@ -1911,10 +1918,10 @@ function DoctorDashboard() {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveEditPrescriptionItem(index)}
-                                                    style={{ background: "#991b1b", border: "1px solid #7f1d1d", color: "#ffffff", padding: "10px 12px", borderRadius: "10px", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                                                    style={{ background: "#fee2e2", border: "1px solid #fecaca", color: "#dc2626", height: "46px", padding: "0 14px", borderRadius: "12px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                                     title="Supprimer cette ligne"
                                                 >
-                                                    <IconTrash size={15} />
+                                                    <IconTrash size={16} />
                                                 </button>
                                             )}
                                         </div>

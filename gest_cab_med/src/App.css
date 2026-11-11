@@ -2105,3 +2105,12 @@ select.form-control {
     background-size: 16px;
     padding-right: 40px;
 }
+
+
+/* Center modals cleanly relative to the main workspace (avoid overlapping the sidebar) */
+@media (min-width: 1024px) {
+    .app-dashboard .modal-overlay {
+        padding-left: calc(var(--sidebar-width, 270px) + 32px);
+        padding-right: 32px;
+    }
+}
