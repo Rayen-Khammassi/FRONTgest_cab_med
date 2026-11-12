@@ -1,680 +1,649 @@
-
 /* =========================================
-   1. GLOBAL AUTHENTICATION BACKGROUND
+   1. GLOBAL STYLES
 ========================================= */
 
+* {
+    box-sizing: border-box;
+}
+
 .auth-page {
-    --accent: #20d6c1;
-    --accent-blue: #1678ee;
+    --primary: #087f9e;
+    --secondary: #13bda9;
+    --dark: #123d55;
+    --muted: #6b8796;
 
     position: relative;
     min-height: 100vh;
     width: 100%;
-    overflow: hidden;
-    isolation: isolate;
-    color: white;
-    font-family: "Segoe UI", Arial, sans-serif;
-
-    background: linear-gradient(
-        -45deg,
-        #063b78,
-        #087eaa,
-        #08b99e,
-        #075e91,
-        #13a9b5,
-        #063b78
-    );
-
-    background-size: 400% 400%;
-    animation: gradientFlow 18s ease infinite;
-}
-
-@keyframes gradientFlow {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    25% {
-        background-position: 50% 100%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    75% {
-        background-position: 50% 0%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-/* Subtle gradient changes according to role */
-
-.auth-page.role-docteur {
-    --accent: #45e0c5;
-
-    background:
-        radial-gradient(ellipse at 85% 20%, rgba(45, 239, 195, 0.5), transparent 40%),
-        radial-gradient(ellipse at 15% 80%, rgba(40, 135, 240, 0.4), transparent 42%),
-        linear-gradient(125deg, #063b78, #087eaa 52%, #0ab89b);
-}
-
-.auth-page.role-secretaire {
-    --accent: #69e5c7;
-
-    background:
-        radial-gradient(ellipse at 85% 20%, rgba(65, 220, 210, 0.45), transparent 40%),
-        radial-gradient(ellipse at 15% 80%, rgba(55, 145, 250, 0.5), transparent 42%),
-        linear-gradient(125deg, #07366d, #087da8 52%, #119d9e);
-}
-
-/* =========================================
-   2. WELCOME TITLE ANIMATION
-========================================= */
-
-.brand {
-    position: absolute;
-    z-index: 10;
-
-    top: 50%;
-    left: 50%;
+    overflow-x: hidden;
 
     display: flex;
     align-items: center;
-    gap: 18px;
+    justify-content: center;
 
-    transform: translate(-50%, -50%);
-    text-align: center;
-    white-space: nowrap;
+    padding: 35px 20px;
 
-    animation: welcomeFade 1.3s ease both;
+    font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+    color: var(--dark);
 
-    transition:
-        top 1.2s cubic-bezier(0.22, 1, 0.36, 1),
-        left 1.2s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
-        gap 1.2s ease;
-}
+    background:
+        radial-gradient(circle at 10% 15%, rgba(83, 220, 210, 0.32), transparent 32%),
+        radial-gradient(circle at 90% 85%, rgba(63, 165, 226, 0.28), transparent 35%),
+        linear-gradient(135deg, #e9f8fa 0%, #e7f3fb 50%, #e9f9f5 100%);
 
-@keyframes welcomeFade {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -40%) scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-}
-
-.brand h1 {
-    margin: 0;
-    font-size: clamp(2.5rem, 6vw, 5rem);
-    font-weight: 800;
-    letter-spacing: 5px;
-
-    text-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
-
-    transition: font-size 1.2s ease, letter-spacing 1.2s ease;
-}
-
-.brand p {
-    margin: 10px 0 0;
-    font-size: 1.1rem;
-    opacity: 0.85;
-
-    transition: font-size 1.2s ease, margin 1.2s ease;
-}
-
-.brand-mark {
-    display: none;
-    font-size: 2.5rem;
-    color: #ffffff;
-}
-
-/* Final header position */
-
-.brand-small {
-    top: 45px;
-    left: 50%;
-    transform: translate(-50%, 0);
-    gap: 12px;
-}
-
-.brand-small h1 {
-    font-size: clamp(1.4rem, 2.5vw, 2rem);
-    letter-spacing: 3px;
-}
-
-.brand-small p {
-    font-size: 0.8rem;
-    margin-top: 3px;
-}
-
-.brand-small .brand-mark {
-    display: block;
+    isolation: isolate;
 }
 
 /* =========================================
-   3. MEDICAL BACKGROUND ILLUSTRATIONS
+   2. BACKGROUND ANIMATION
+========================================= */
+
+.background-glow {
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.glow-one {
+    width: 380px;
+    height: 380px;
+    top: -130px;
+    left: -100px;
+    background: rgba(37, 202, 184, 0.15);
+    animation: glowFloat 12s ease-in-out infinite alternate;
+}
+
+.glow-two {
+    width: 450px;
+    height: 450px;
+    right: -160px;
+    bottom: -170px;
+    background: rgba(42, 144, 217, 0.13);
+    animation: glowFloat 15s ease-in-out infinite alternate-reverse;
+}
+
+.glow-three {
+    width: 180px;
+    height: 180px;
+    top: 35%;
+    right: 12%;
+    background: rgba(57, 210, 185, 0.09);
+    filter: blur(45px);
+    animation: glowPulse 8s ease-in-out infinite;
+}
+
+@keyframes glowFloat {
+    from {
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        transform: translate3d(35px, 45px, 0);
+    }
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        opacity: 0.5;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* =========================================
+   3. MEDICAL DECORATIONS
 ========================================= */
 
 .medical-scene {
     position: absolute;
     inset: 0;
     z-index: -1;
+    overflow: hidden;
     pointer-events: none;
-
-    opacity: 0;
-    animation: sceneAppear 1.5s ease 0.5s forwards;
-
-    transition: transform 1.2s ease;
 }
 
-@keyframes sceneAppear {
-    to {
-        opacity: 1;
-    }
+.medical-decoration {
+    position: absolute;
+    color: rgba(15, 139, 157, 0.12);
+    font-weight: 800;
+    animation: decorationFloat 9s ease-in-out infinite;
 }
 
-/* Floating light orbs */
+.decoration-heart {
+    top: 15%;
+    left: 12%;
+    font-size: 48px;
+    color: rgba(244, 112, 139, 0.16);
+}
+
+.decoration-cross {
+    top: 22%;
+    right: 15%;
+    font-size: 65px;
+}
+
+.decoration-pill {
+    top: 68%;
+    left: 8%;
+    font-size: 55px;
+    transform: rotate(25deg);
+}
+
+.decoration-shield {
+    bottom: 12%;
+    right: 13%;
+    font-size: 75px;
+}
+
+.decoration-capsule {
+    top: 72%;
+    right: 30%;
+    font-size: 42px;
+}
+
+.decoration-cross-two {
+    top: 10%;
+    right: 42%;
+    font-size: 35px;
+}
 
 .medical-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(2px);
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 60px rgba(95, 255, 230, 0.2);
-    animation: floatOrb 8s ease-in-out infinite alternate;
+    background: rgba(255, 255, 255, 0.35);
+    filter: blur(1px);
+    animation: decorationFloat 11s ease-in-out infinite alternate;
 }
 
 .orb-one {
-    width: 240px;
-    height: 240px;
-    right: 12%;
-    top: 25%;
+    width: 170px;
+    height: 170px;
+    top: 12%;
+    right: 28%;
 }
 
 .orb-two {
-    width: 130px;
-    height: 130px;
-    right: 45%;
-    bottom: 10%;
+    width: 100px;
+    height: 100px;
+    bottom: 15%;
+    left: 28%;
     animation-delay: 2s;
 }
 
-@keyframes floatOrb {
-    from {
-        transform: translateY(-15px);
-    }
-
-    to {
-        transform: translateY(25px);
-    }
-}
-
-/* Medical crosses */
-
-.medical-cross {
-    position: absolute;
-    color: #ff7777;
-    font-size: 65px;
-    font-weight: 900;
-
-    text-shadow:
-        0 5px 15px rgba(0, 0, 0, 0.2),
-        0 0 25px rgba(255, 100, 100, 0.4);
-
-    animation: floatingObject 6s ease-in-out infinite;
-}
-
-.cross-one {
-    top: 25%;
-    right: 15%;
-    transform: rotate(15deg);
-}
-
-.cross-two {
-    top: 65%;
-    right: 42%;
-    font-size: 35px;
-    animation-delay: 2s;
-}
-
-/* Floating capsules */
-
-.pill {
-    position: absolute;
-    width: 95px;
-    height: 38px;
-    border-radius: 30px;
-
-    background: linear-gradient(
-        90deg,
-        #ffffff 0%,
-        #e2f4ff 48%,
-        #38a9fa 50%,
-        #0874d5 100%
-    );
-
-    box-shadow:
-        inset 0 3px 6px rgba(255, 255, 255, 0.9),
-        0 12px 25px rgba(0, 30, 80, 0.3);
-
-    animation: floatingObject 7s ease-in-out infinite;
-}
-
-.pill-one {
-    top: 32%;
-    right: 38%;
-    transform: rotate(-30deg);
-}
-
-.pill-two {
-    bottom: 22%;
-    right: 12%;
-    transform: rotate(35deg);
-    animation-delay: 2s;
-}
-
-@keyframes floatingObject {
+@keyframes decorationFloat {
     0%, 100% {
-        translate: 0 0;
-        rotate: 0deg;
+        transform: translate3d(0, 0, 0) rotate(-5deg);
     }
-
     50% {
-        translate: 12px -25px;
-        rotate: 12deg;
+        transform: translate3d(8px, -18px, 0) rotate(5deg);
     }
 }
 
-/* Right-side slogan */
+/* =========================================
+   4. MAIN CONTENT
+========================================= */
 
-.medical-message {
-    position: absolute;
-    right: 12%;
-    bottom: 18%;
+.auth-content {
+    width: 100%;
+    max-width: 470px;
 
     display: flex;
     flex-direction: column;
+    align-items: center;
 
-    font-size: clamp(1.5rem, 3vw, 3rem);
-    font-weight: 300;
-    font-style: italic;
-    text-align: center;
-
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-
-    animation: floatingObject 7s ease-in-out infinite;
-}
-
-.medical-message span:last-child {
-    color: #8affdf;
+    position: relative;
+    z-index: 2;
 }
 
 /* =========================================
-   4. GLASS AUTHENTICATION PANEL
+   5. BRAND HEADER (LOGO ONLY, NO CUBIC BG)
 ========================================= */
 
-.auth-panel {
-    position: absolute;
-    z-index: 5;
-
-    top: 50%;
-    left: 4%;
-
-    width: min(410px, 35vw);
-    max-height: calc(100vh - 155px);
-    overflow-y: auto;
-
-    padding: 30px;
-
-    border: 1px solid rgba(255, 255, 255, 0.45);
-    border-radius: 25px;
-
-    background: rgba(255, 255, 255, 0.16);
-
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-
-    box-shadow:
-        0 20px 60px rgba(0, 30, 80, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.5);
-
-    opacity: 0;
-
-    transform: translateY(-45%) translateX(-40px);
-
-    transition:
-        left 1.2s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.8s ease,
-        transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
-        background 0.8s ease;
-}
-
-.auth-panel {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.auth-panel::-webkit-scrollbar {
-    display: none;
-}
-.auth-panel {
-    transform: translateX(-40px) translateY(-50%);
-}
-
-.auth-panel.panel-visible {
-    transform: translateX(0) translateY(-50%);
-}
-.auth-panel.panel-visible {
-    opacity: 1;
-    transform: translateY(-45%) translateX(0);
-}
-
-/* Patient = left */
-
-.role-patient .auth-panel {
-    left: 4%;
-}
-
-/* Doctor = middle */
-
-.role-docteur .auth-panel {
-    left: calc(50% - min(205px, 17.5vw));
-}
-
-/* Secretary = right */
-
-.role-secretaire .auth-panel {
-    left: calc(96% - min(410px, 35vw));
-}
-
-/* =========================================
-   5. PANEL HEADER
-========================================= */
-
-.panel-heading {
-    text-align: center;
-    margin-bottom: 25px;
-}
-
-.panel-icon {
-    display: inline-flex;
+.brand {
+    display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    gap: 10px;
 
-    width: 55px;
-    height: 55px;
+    margin-bottom: 28px;
 
-    border-radius: 18px;
+    opacity: 0;
+    transform: translateY(-12px);
 
-    font-size: 30px;
-    color: white;
-
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-
-    box-shadow: 0 8px 20px rgba(0, 40, 100, 0.15);
+    animation: brandAppear 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.panel-heading h2 {
-    font-size: 1.8rem;
-    margin: 12px 0 5px;
-    font-weight: 700;
-}
-
-.panel-heading p {
-    font-size: 0.9rem;
-    opacity: 0.85;
-    margin: 0;
-}
-
-/* =========================================
-   6. ROLE SELECTOR AND TABS
-========================================= */
-
-.role-selector,
-.auth-tabs {
-    display: flex;
-    gap: 7px;
-    margin-bottom: 20px;
-}
-
-.role-selector button,
-.auth-tabs button {
-    flex: 1;
-    min-width: 0;
-
-    padding: 11px 5px;
-
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 12px;
-
-    background: rgba(255, 255, 255, 0.13);
-    color: white;
-
-    font-size: 0.85rem;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-        background 0.3s ease,
-        color 0.3s ease,
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
-}
-
-.role-selector button:hover,
-.auth-tabs button:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.25);
-}
-
-.role-selector button.selected,
-.auth-tabs button.selected {
-    background: linear-gradient(120deg, #0879f9, #09c7c0);
-    border-color: rgba(255, 255, 255, 0.7);
-
-    box-shadow: 0 5px 18px rgba(0, 100, 200, 0.3);
-}
-
-/* =========================================
-   7. FORM FIELDS
-========================================= */
-
-.auth-form {
-    animation: formAppear 0.45s ease both;
-}
-
-@keyframes formAppear {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
+@keyframes brandAppear {
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-.form-group {
+/* Logo only — zero cubic/square wrapper background */
+.brand-logo-pure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #087f9e;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 8px 16px rgba(8, 127, 158, 0.24));
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s ease;
+}
+
+.brand-logo-pure:hover {
+    transform: scale(1.06);
+    filter: drop-shadow(0 12px 22px rgba(8, 127, 158, 0.35));
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Authentic, stylish, artistic Andalusian medical serif */
+.brand-title-authentic {
+    margin: 0;
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #0c384f;
+    line-height: 1.15;
+    text-shadow: 0 2px 5px rgba(12, 56, 79, 0.1);
+}
+
+.brand-subtitle-authentic {
+    margin: 5px 0 0;
+    color: #4b6e82;
+    font-size: 0.88rem;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+}
+
+/* =========================================
+   6. AUTHENTICATION CARD
+========================================= */
+
+.auth-panel {
+    width: 100%;
+    padding: 36px 38px 26px;
+
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-radius: 27px;
+
+    background: rgba(255, 255, 255, 0.88);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+
+    box-shadow:
+        0 24px 65px rgba(35, 91, 116, 0.14),
+        0 4px 15px rgba(35, 91, 116, 0.06);
+
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+
+    transition:
+        opacity 0.7s ease,
+        transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.auth-panel.panel-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+/* =========================================
+   7. PANEL HEADING
+========================================= */
+
+.panel-heading {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.panel-heading h2 {
+    margin: 0 0 6px;
+    color: #0f354a;
+    font-size: 1.7rem;
+    font-weight: 750;
+    letter-spacing: -0.015em;
+}
+
+.panel-heading p {
+    margin: 0;
+    color: #648293;
+    font-size: 0.92rem;
+}
+
+/* =========================================
+   8. CONNEXION / INSCRIPTION TABS
+========================================= */
+
+.auth-tabs {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    padding: 5px;
+    margin-bottom: 24px;
+
+    border-radius: 13px;
+    background: #e9f2f5;
+    border: 1px solid #d5e5ec;
+}
+
+.auth-tabs button {
+    position: relative;
+    z-index: 2;
+
+    flex: 1;
+    padding: 11px 8px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+    color: #64808e;
+
+    font-size: 0.92rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: color 0.25s ease;
+}
+
+.auth-tabs button.selected {
+    color: #0c4a6e;
+}
+
+.tab-indicator {
+    position: absolute;
+    z-index: 1;
+
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+
+    width: calc(50% - 5px);
+
+    border-radius: 10px;
+    background: white;
+
+    box-shadow: 0 3px 10px rgba(30, 82, 104, 0.12);
+
+    transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auth-tabs.register-active .tab-indicator {
+    transform: translateX(100%);
+}
+
+/* =========================================
+   9. FORM
+========================================= */
+
+.auth-form {
+    animation: formAppear 0.4s ease both;
+}
+
+@keyframes formAppear {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 13px;
+}
+
+.field-group {
     display: flex;
     flex-direction: column;
     margin-bottom: 16px;
 }
 
-.form-group label {
-    margin-bottom: 7px;
+.field-group label {
+    margin-bottom: 6px;
+
+    color: #1f4255;
     font-size: 0.85rem;
-    font-weight: 600;
-    color: white;
+    font-weight: 700;
 }
 
-.form-group input {
+.field-group input {
     width: 100%;
-    padding: 13px 15px;
+    min-width: 0;
+    height: 48px;
 
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
+    padding: 0 14px;
+
+    border: 1.5px solid #d1e2e8;
+    border-radius: 11px;
 
     outline: none;
 
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.17);
+    color: #12374b;
+    background: #fbfdfd;
 
-    font-size: 0.9rem;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 500;
 
     transition:
-        border 0.3s ease,
-        background 0.3s ease,
-        box-shadow 0.3s ease;
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.form-group input::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+.field-group input::placeholder {
+    color: #9ab0ba;
 }
 
-.form-group input:focus {
-    border-color: #8affdf;
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 0 0 3px rgba(100, 255, 220, 0.13);
+.field-group input:hover {
+    border-color: #8bbec7;
 }
 
-.form-group input::-webkit-calendar-picker-indicator {
-    filter: invert(1);
+.field-group input:focus {
+    border-color: #087f9e;
+    background: white;
+    box-shadow: 0 0 0 3.5px rgba(8, 127, 158, 0.16);
 }
 
 /* =========================================
-   8. SUBMIT BUTTON
+   10. SUBMIT BUTTON (DARKER & HIGH CONTRAST)
 ========================================= */
 
 .submit-button {
+    position: relative;
+
     width: 100%;
-    padding: 14px;
+    min-height: 50px;
 
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 
-    background: linear-gradient(110deg, #0879f9, #08c7b6);
-    color: white;
+    margin-top: 10px;
+    padding: 13px 20px;
 
-    font-size: 1rem;
-    font-weight: 700;
+    border: 1px solid #075985;
+    border-radius: 12px;
+
+    color: #ffffff !important;
+    background: #0c4a6e; /* Solid dark deep ocean/navy */
+
+    font-family: inherit;
+    font-size: 0.96rem;
+    font-weight: 750;
+    letter-spacing: 0.015em;
 
     cursor: pointer;
 
-    box-shadow: 0 8px 25px rgba(0, 80, 180, 0.25);
+    box-shadow: 0 6px 18px rgba(12, 74, 110, 0.35);
 
     transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease,
-        filter 0.3s ease;
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.submit-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(0, 80, 180, 0.35);
-    filter: brightness(1.1);
+.submit-button:hover:not(:disabled) {
+    transform: translateY(-1.5px);
+    background: #082f49; /* Darker navy */
+    border-color: #032135;
+    box-shadow: 0 10px 26px rgba(8, 47, 73, 0.45);
 }
 
-.submit-button:active {
-    transform: translateY(0);
+.submit-button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.submit-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.button-arrow {
+    font-size: 1.25rem;
+    transition: transform 0.2s ease;
+}
+
+.submit-button:hover .button-arrow {
+    transform: translateX(5px);
 }
 
 /* =========================================
-   9. FOOTER
+   11. FEEDBACK
+======================================== */
+
+.feedback-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    animation: feedbackAppear 0.25s ease;
+}
+
+.feedback-error {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+}
+
+.feedback-success {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.feedback-bullet {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+@keyframes feedbackAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   12. FOOTER
 ========================================= */
 
 .panel-footer {
-    margin: 22px 0 0;
-    padding-top: 15px;
-
-    border-top: 1px solid rgba(255, 255, 255, 0.25);
-
+    margin-top: 24px;
     text-align: center;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.8);
+}
+
+.panel-footer p {
+    margin: 0;
+    color: #7b94a2;
+    font-size: 0.78rem;
+    font-weight: 500;
 }
 
 /* =========================================
-   10. RESPONSIVE DESIGN
+   13. RESPONSIVE DESIGN
 ========================================= */
 
-@media (max-width: 900px) {
-    .auth-panel {
-        width: min(440px, 88vw);
-        left: 50% !important;
-        top: 53%;
-        transform: translate(-50%, -40%);
+@media (max-width: 600px) {
+    .auth-page {
+        padding: 25px 15px;
+        align-items: flex-start;
     }
 
-    .auth-panel.panel-visible {
-        transform: translate(-50%, -50%);
+    .auth-content {
+        margin: auto 0;
     }
 
-    .brand-small {
-        top: 25px;
+    .brand {
+        margin-bottom: 22px;
     }
 
-    .medical-message {
-        display: none;
-    }
-
-    .stethoscope {
-        right: 5%;
-        top: 18%;
-        opacity: 0.5;
-    }
-
-    .cross-one {
-        right: 8%;
-        top: 20%;
-    }
-}
-
-@media (max-width: 500px) {
-    .brand-small {
-        top: 20px;
-    }
-
-    .brand-small h1 {
-        font-size: 1.3rem;
-    }
-
-    .brand-small p {
-        font-size: 0.7rem;
-    }
-
-    .brand-mark {
-        font-size: 1.7rem;
+    .brand-title-authentic {
+        font-size: 1.95rem;
     }
 
     .auth-panel {
-        padding: 22px;
-        max-height: calc(100vh - 105px);
-    }
-
-    .role-selector button,
-    .auth-tabs button {
-        font-size: 0.75rem;
-        padding: 10px 3px;
+        padding: 28px 22px 22px;
+        border-radius: 22px;
     }
 
     .panel-heading h2 {
-        font-size: 1.5rem;
+        font-size: 1.55rem;
+    }
+
+    .decoration-cross,
+    .decoration-heart,
+    .decoration-shield {
+        opacity: 0.5;
+    }
+}
+
+@media (max-width: 420px) {
+    .input-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .auth-panel {
+        padding: 24px 18px 20px;
     }
 }
 
 /* =========================================
-   11. ACCESSIBILITY
+   14. ACCESSIBILITY
 ========================================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -684,100 +653,6 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
-}
-.medical-decoration {
-    position: absolute;
-    z-index: 0;
-    pointer-events: none;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    opacity: 0.65;
-    filter: drop-shadow(0 12px 18px rgba(0, 25, 70, 0.25));
-
-    animation: medicalFloat 9s ease-in-out infinite;
-}
-
-.decoration-heart {
-    top: 18%;
-    left: 13%;
-    font-size: 65px;
-    color: #ff7189;
-    animation-delay: 1s;
-}
-
-.decoration-cross {
-    top: 45%;
-    left: 48%;
-    font-size: 55px;
-    color: #ff7777;
-    animation-delay: 3s;
-}
-
-.decoration-pill {
-    top: 12%;
-    right: 35%;
-    font-size: 55px;
-    animation-delay: 2s;
-}
-
-.decoration-plus {
-    bottom: 15%;
-    left: 12%;
-    font-size: 45px;
-    color: #b4fff0;
-    animation-delay: 4s;
-}
-
-.decoration-shield {
-    bottom: 12%;
-    right: 40%;
-    font-size: 65px;
-    animation-delay: 1.5s;
-}
-
-.decoration-heartbeat {
-    top: 65%;
-    right: 8%;
-    font-size: 65px;
-    color: #ff8ca5;
-    animation-delay: 2.5s;
-}
-
-.decoration-capsule {
-    top: 75%;
-    left: 35%;
-    font-size: 48px;
-    animation-delay: 3.5s;
-}
-
-.decoration-cross-two {
-    top: 12%;
-    right: 8%;
-    font-size: 40px;
-    color: #ffffff;
-    animation-delay: 5s;
-}
-
-@keyframes medicalFloat {
-    0%, 100% {
-        transform: translate3d(0, 0, 0) rotate(-8deg);
-    }
-
-    50% {
-        transform: translate3d(12px, -25px, 15px) rotate(8deg);
-    }
-}
-.stethoscope-icon {
-    position: absolute;
-    top: 25%;
-    right: 25%;
-    font-size: 110px;
-
-    filter: drop-shadow(0 12px 18px rgba(0, 25, 70, 0.3));
-
-    animation: medicalFloat 8s ease-in-out infinite;
 }
