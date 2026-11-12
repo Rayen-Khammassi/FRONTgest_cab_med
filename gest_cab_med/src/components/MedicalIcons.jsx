@@ -24,6 +24,9 @@ export function LogoAlZahrawi({ size = 32, className = "" }) {
     );
 }
 
+// Alias historique pour rétrocompatibilité
+export const LogoAlZahraoui = LogoAlZahrawi;
+
 // 1. Medicine Cabinet (Wall cabinet with shelves, bottles, and cross badge)
 export function IconMedicineCabinet({ size = 24, className = "" }) {
     return (

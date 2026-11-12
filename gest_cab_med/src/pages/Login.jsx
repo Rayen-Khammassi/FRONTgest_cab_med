@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "./Login.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { loginUser, saveUser } from "../services/authService";
 import { LogoAlZahrawi } from "../components/MedicalIcons";
 
@@ -150,13 +150,15 @@ function Login() {
             <div className="auth-content">
 
                 <header className="brand">
-                    <div className="brand-logo-pure" aria-label="Logo Al-Zahrawi">
-                        <LogoAlZahrawi size={78} />
-                    </div>
-                    <div className="brand-text">
-                        <h1 className="brand-title-authentic">Al-Zahrawi</h1>
-                        <p className="brand-subtitle-authentic">Cabinet Médical · Système de gestion</p>
-                    </div>
+                    <Link to="/" style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", alignItems: "center" }} title="Retour à l'accueil Al-Zahrawi">
+                        <div className="brand-logo-pure" aria-label="Logo Al-Zahrawi">
+                            <LogoAlZahrawi size={78} />
+                        </div>
+                        <div className="brand-text">
+                            <h1 className="brand-title-authentic">Al-Zahrawi</h1>
+                            <p className="brand-subtitle-authentic">Cabinet Médical · Système de gestion</p>
+                        </div>
+                    </Link>
                 </header>
 
                 <section className={`auth-panel ${introFinished ? "panel-visible" : ""}`}>

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import PatientDashboard from "./pages/PatientDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
@@ -13,7 +14,7 @@ import "./App.css";
 /**
  * Composant de synchronisation d'authentification inter-onglets.
  * Écoute les modifications de session sur les autres onglets du navigateur :
- * - Déconnexion sur un autre onglet -> redirection immédiate de tous les onglets vers l'écran de connexion.
+ * - Déconnexion sur un autre onglet -> redirection immédiate de tous les onglets vers l'accueil.
  * - Changement de compte sur un autre onglet -> bascule instantanée et propre vers le tableau de bord adéquat.
  */
 function CrossTabAuthSync() {
@@ -52,9 +53,17 @@ function App() {
         <BrowserRouter>
             <CrossTabAuthSync />
             <Routes>
-                {/* Public route - Login untouched, auto-redirect if already logged in */}
+                {/* ========== PUBLIC ROUTES ========== */}
+
+                {/* Landing Page - Vitrine Officielle Al-Zahrawi */}
                 <Route
                     path="/"
+                    element={<LandingPage />}
+                />
+
+                {/* Login / Inscription (avec redirection automatique si déjà connecté) */}
+                <Route
+                    path="/login"
                     element={
                         <PublicRoute>
                             <Login />
@@ -62,7 +71,7 @@ function App() {
                     }
                 />
 
-                {/* Patient routes */}
+                {/* ========== PATIENT ROUTES ========== */}
                 <Route element={<ProtectedRoute allowedRole="PATIENT" />}>
                     <Route
                         path="/patient/*"
@@ -70,7 +79,7 @@ function App() {
                     />
                 </Route>
 
-                {/* Doctor routes */}
+                {/* ========== DOCTOR ROUTES ========== */}
                 <Route element={<ProtectedRoute allowedRole="DOCTEUR" />}>
                     <Route
                         path="/doctor/medicaments"
@@ -82,7 +91,7 @@ function App() {
                     />
                 </Route>
 
-                {/* Secretary routes */}
+                {/* ========== SECRETARY ROUTES ========== */}
                 <Route element={<ProtectedRoute allowedRole="SECRETAIRE" />}>
                     <Route
                         path="/secretary/medicaments"
@@ -94,14 +103,10 @@ function App() {
                     />
                 </Route>
 
-                {/* Unknown routes */}
+                {/* ========== UNKNOWN ROUTES ========== */}
                 <Route
                     path="*"
-                    element={
-                        <PublicRoute>
-                            <Login />
-                        </PublicRoute>
-                    }
+                    element={<Navigate to="/" replace />}
                 />
             </Routes>
         </BrowserRouter>
