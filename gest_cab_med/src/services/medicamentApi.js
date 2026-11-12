@@ -1,6 +1,7 @@
 const API_BASE = (
+    import.meta.env.VITE_MAIN_API_URL ||
     import.meta.env.VITE_API_URL ||
-    "http://localhost:8082"
+    "http://localhost:8081"
 ).replace(/\/$/, "");
 
 async function request(method, path = "", body) {

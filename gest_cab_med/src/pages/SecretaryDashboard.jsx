@@ -10,7 +10,11 @@ import {
 } from "../services/appointmentService";
 import {
     getAllConsultations,
-    getPatients
+    deleteConsultation,
+    getPatients,
+    createPatient,
+    updatePatient,
+    togglePatientStatus
 } from "../services/medicalService";
 import {
     IconAppointmentCalendar,
@@ -25,10 +29,31 @@ import {
     IconCalendar,
     IconClock,
     IconUser,
-    IconArrowLeft
+    IconArrowLeft,
+    IconPatientDossier,
+    IconEye,
+    IconTrash,
+    IconSearch,
+    IconAlert,
+    IconStethoscope
 } from "../components/MedicalIcons";
+import ConfirmModal from "../components/ConfirmModal";
+
+const formatFrenchDate = (dateStr) => {
+    if (!dateStr) return "Non renseignée";
+    try {
+        const parts = dateStr.split("-");
+        if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return dateStr;
+    } catch {
+        return dateStr;
+    }
+};
 
 const cards = [
+    { icon: IconPatientDossier, title: "Gestion des patients", description: "Consulter et gérer les dossiers administratifs des patients.", path: "/secretary/patients" },
     { icon: IconAppointmentCalendar, title: "Gestion des rendez-vous", description: "Organiser, confirmer, modifier et créer les rendez-vous du cabinet.", path: "/secretary/appointments" },
     { icon: IconFirstAidBox, title: "Salle d'attente du jour", description: "Suivre en direct les arrivées et la file d'attente des patients aujourd'hui.", path: "/secretary/waiting-room" },
     { icon: IconConsultation, title: "Consultations administratives", description: "Gérer les informations administratives et le suivi des actes du cabinet.", path: "/secretary/consultations" },
@@ -38,7 +63,8 @@ const cards = [
 function SecretaryDashboard() {
     const navigate = useNavigate();
     const location = useLocation();
-    const path = location.pathname;
+    const rawPath = location.pathname;
+    const path = rawPath.endsWith("/") && rawPath.length > 1 ? rawPath.slice(0, -1) : rawPath;
 
     const [appointments, setAppointments] = useState([]);
     const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
@@ -58,6 +84,21 @@ function SecretaryDashboard() {
     // Consultations state
     const [consultations, setConsultations] = useState([]);
     const [isLoadingConsultations, setIsLoadingConsultations] = useState(false);
+
+    // Patient Management state for secretary
+    const [patientSearch, setPatientSearch] = useState("");
+    const [isLoadingPatients, setIsLoadingPatients] = useState(false);
+    const [selectedPatientModal, setSelectedPatientModal] = useState(null);
+    const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+    const [newPatientForm, setNewPatientForm] = useState({
+        nom: "",
+        prenom: "",
+        email: "",
+        dateNaissance: "",
+        adresse: ""
+    });
+    const [editingPatientModal, setEditingPatientModal] = useState(null);
+    const [confirmModalState, setConfirmModalState] = useState(null);
 
     // New Appointment modal state for secretary
     const [showNewRdvModal, setShowNewRdvModal] = useState(false);
@@ -85,9 +126,90 @@ function SecretaryDashboard() {
             .finally(() => setIsLoadingConsultations(false));
     };
 
+    const loadPatients = () => {
+        setIsLoadingPatients(true);
+        getPatients()
+            .then((data) => setPatientsList(data || []))
+            .finally(() => setIsLoadingPatients(false));
+    };
+
     const loadPatientsAndDoctors = () => {
-        getPatients().then((data) => setPatientsList(data || []));
+        loadPatients();
         getDoctors().then((data) => setDoctorsList(data || []));
+    };
+
+    const handleDeleteConsultation = (c) => {
+        setConfirmModalState({
+            title: `Supprimer la consultation #${c.idConsultation} ?`,
+            message: `Êtes-vous sûr de vouloir supprimer définitivement cette consultation pour le patient ${c.patientNom} ${c.patientPrenom} ? Cette action réinitialisera le rendez-vous associé en statut 'CONFIRMÉ' et libérera le dossier.`,
+            confirmText: "Oui, supprimer",
+            cancelText: "Annuler",
+            variant: "danger",
+            onConfirm: async () => {
+                setConfirmModalState(null);
+                try {
+                    await deleteConsultation(c.idConsultation);
+                    showToast(`Consultation #${c.idConsultation} supprimée avec succès.`, "success");
+                    loadConsultations();
+                    loadAppointments();
+                } catch (error) {
+                    showToast(error.message || "Erreur lors de la suppression de la consultation.", "error");
+                }
+            }
+        });
+    };
+
+    const handleCreatePatientSubmit = async (e) => {
+        e.preventDefault();
+        if (!newPatientForm.nom || !newPatientForm.prenom || !newPatientForm.email) {
+            showToast("Nom, prénom et email sont obligatoires pour créer un patient.", "error");
+            return;
+        }
+        try {
+            await createPatient(newPatientForm);
+            showToast("Patient enregistré avec succès !", "success");
+            setShowNewPatientModal(false);
+            setNewPatientForm({ nom: "", prenom: "", email: "", dateNaissance: "", adresse: "" });
+            loadPatients();
+        } catch (error) {
+            showToast(error.message || "Erreur lors de la création du patient.", "error");
+        }
+    };
+
+    const handleUpdatePatientSubmit = async (e) => {
+        e.preventDefault();
+        if (!editingPatientModal) return;
+        try {
+            await updatePatient(editingPatientModal.idUtilisateur, editingPatientModal);
+            showToast("Dossier patient mis à jour avec succès !", "success");
+            setEditingPatientModal(null);
+            loadPatients();
+        } catch (error) {
+            showToast(error.message || "Erreur lors de la mise à jour.", "error");
+        }
+    };
+
+    const handleTogglePatientStatus = (patient) => {
+        const newActif = !patient.actif;
+        setConfirmModalState({
+            title: newActif ? "Réactiver le dossier patient" : "Désactiver le dossier patient",
+            message: newActif
+                ? `Souhaitez-vous réactiver le dossier de ${patient.prenom} ${patient.nom} ? Le patient pourra à nouveau prendre rendez-vous.`
+                : `Souhaitez-vous désactiver le dossier de ${patient.prenom} ${patient.nom} ? L'historique des consultations et rendez-vous sera entièrement préservé.`,
+            confirmText: newActif ? "Accepter (Réactiver)" : "Accepter (Désactiver)",
+            cancelText: "Annuler",
+            variant: newActif ? "success" : "danger",
+            onConfirm: async () => {
+                setConfirmModalState(null);
+                try {
+                    await togglePatientStatus(patient.idUtilisateur, newActif);
+                    showToast(`Patient ${patient.prenom} ${patient.nom} ${newActif ? "réactivé" : "désactivé"} avec succès.`, "success");
+                    loadPatients();
+                } catch (error) {
+                    showToast(error.message || "Erreur lors du changement de statut.", "error");
+                }
+            }
+        });
     };
 
     useEffect(() => {
@@ -104,6 +226,8 @@ function SecretaryDashboard() {
                 .catch(() => {
                     if (!isCancelled) setIsLoadingAppointments(false);
                 });
+        } else if (path.includes("patients")) {
+            loadPatients();
         } else if (path.includes("consultations")) {
             getAllConsultations()
                 .then((data) => {
@@ -184,7 +308,10 @@ function SecretaryDashboard() {
     let title = "Tableau de bord secrétaire";
     let subtitle = "Gérez l'organisation administrative du cabinet médical.";
 
-    if (path.includes("waiting-room")) {
+    if (path.includes("patients")) {
+        title = "Gestion des dossiers patients";
+        subtitle = "Consultez, modifiez et gérez les dossiers administratifs des patients du cabinet.";
+    } else if (path.includes("waiting-room")) {
         title = "Salle d'attente du jour";
         subtitle = "Suivi en direct des patients du jour et gestion de la file d'attente.";
     } else if (path.includes("appointments")) {
@@ -194,6 +321,16 @@ function SecretaryDashboard() {
         title = "Suivi Administratif des Consultations";
         subtitle = "Gérez les dossiers administratifs et l'historique des actes.";
     }
+
+    const filteredPatients = patientsList.filter((p) => {
+        const q = patientSearch.toLowerCase();
+        return (
+            (p.nom && p.nom.toLowerCase().includes(q)) ||
+            (p.prenom && p.prenom.toLowerCase().includes(q)) ||
+            (p.email && p.email.toLowerCase().includes(q)) ||
+            (p.adresse && p.adresse.toLowerCase().includes(q))
+        );
+    });
 
     const filteredList = filterStatut === "TOUS"
         ? appointments
@@ -326,7 +463,7 @@ function SecretaryDashboard() {
                     </div>
 
                     {actionMessage && (
-                        <div style={{ padding: "10px 14px", borderRadius: "10px", background: "rgba(8, 199, 182, 0.22)", border: "1px solid #8affdf", color: "#8affdf", marginBottom: "14px", fontSize: "0.85rem" }}>
+                        <div style={{ padding: "10px 14px", borderRadius: "10px", background: "rgba(8, 199, 182, 0.22)", border: "1px solid #111111", color: "#111111", marginBottom: "14px", fontSize: "0.85rem" }}>
                             {actionMessage}
                         </div>
                     )}
@@ -520,7 +657,7 @@ function SecretaryDashboard() {
                         <div style={{ width: "100%", overflowX: "auto" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#8affdf", fontSize: "0.78rem", textTransform: "uppercase" }}>
+                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#111111", fontSize: "0.78rem", textTransform: "uppercase" }}>
                                         <th style={{ padding: "12px 10px" }}>Heure</th>
                                         <th style={{ padding: "12px 10px" }}>Patient</th>
                                         <th style={{ padding: "12px 10px" }}>Praticien</th>
@@ -556,13 +693,13 @@ function SecretaryDashboard() {
                                                         <button
                                                             type="button"
                                                             onClick={() => handleUpdateStatus(rdv.idRdv, "CONFIRME")}
-                                                            style={{ background: "rgba(8, 199, 182, 0.28)", border: "1px solid #8affdf", color: "#8affdf", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                                                            style={{ background: "rgba(8, 199, 182, 0.28)", border: "1px solid #111111", color: "#111111", padding: "5px 10px", borderRadius: "8px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" }}
                                                         >
                                                             <IconCheck size={12} /> Arrivé
                                                         </button>
                                                     )}
                                                     {rdv.statut === "CONFIRME" && (
-                                                        <span style={{ fontSize: "0.8rem", color: "#8affdf", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                                        <span style={{ fontSize: "0.8rem", color: "#111111", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
                                                             <IconCheck size={12} /> En salle
                                                         </span>
                                                     )}
@@ -626,11 +763,12 @@ function SecretaryDashboard() {
                         <div style={{ width: "100%", overflowX: "auto" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#8affdf", fontSize: "0.78rem", textTransform: "uppercase" }}>
+                                    <tr style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.25)", color: "#111111", fontSize: "0.78rem", textTransform: "uppercase" }}>
                                         <th style={{ padding: "12px 10px" }}>N° & Date</th>
                                         <th style={{ padding: "12px 10px" }}>Patient</th>
                                         <th style={{ padding: "12px 10px" }}>Praticien</th>
                                         <th style={{ padding: "12px 10px" }}>Statut Administratif</th>
+                                        <th style={{ padding: "12px 10px", textAlign: "center" }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -652,6 +790,166 @@ function SecretaryDashboard() {
                                                 <span className="badge-status badge-completed" style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
                                                     <IconCheck size={11} /> Acte honoré / Pris en charge
                                                 </span>
+                                            </td>
+                                            <td style={{ padding: "14px 10px", textAlign: "center" }}>
+                                                <button
+                                                    type="button"
+                                                    className="action-icon-btn action-deactivate"
+                                                    style={{ width: "32px", height: "32px", padding: 0, background: "rgba(239, 68, 68, 0.12)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "6px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s ease" }}
+                                                    onClick={() => handleDeleteConsultation(c)}
+                                                    title="Supprimer la consultation"
+                                                    aria-label="Supprimer la consultation"
+                                                >
+                                                    <IconTrash size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── 5. GESTION DES PATIENTS ── */}
+            {path === "/secretary/patients" && (
+                <div className="medicaments-panneau">
+                    <button onClick={() => navigate("/secretary")} className="btn-retour" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <IconArrowLeft size={16} /> Retour à l'accueil
+                    </button>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
+                        <div>
+                            <h3 style={{ margin: "0 0 4px 0", fontSize: "1.3rem", fontWeight: 700, color: "#0f172a" }}>
+                                Registre des Patients ({patientsList.length})
+                            </h3>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: "0.88rem" }}>
+                                Consultez les fiches administratives, coordonnées et statut des patients du cabinet.
+                            </p>
+                        </div>
+                        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                            <button
+                                type="button"
+                                className="btn-action-principal"
+                                style={{ minHeight: "38px", padding: "8px 16px", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "8px" }}
+                                onClick={() => setShowNewPatientModal(true)}
+                            >
+                                <IconPlus size={15} /> Nouveau patient
+                            </button>
+                            <div className="patient-search-wrapper">
+                                <span className="patient-search-icon"><IconSearch size={16} /></span>
+                                <input
+                                    type="search"
+                                    className="patient-search-input"
+                                    placeholder="Rechercher un patient…"
+                                    value={patientSearch}
+                                    onChange={(e) => setPatientSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {isLoadingPatients ? (
+                        <div style={{ padding: "40px", textAlign: "center", color: "#0f766e", fontWeight: 600 }}>
+                            Chargement des dossiers patients...
+                        </div>
+                    ) : filteredPatients.length === 0 ? (
+                        <div style={{ padding: "50px 20px", textAlign: "center", background: "#f8fafc", borderRadius: "16px", border: "1px dashed #cbd5e1" }}>
+                            <div style={{ display: "flex", justifyContent: "center", marginBottom: "10px", color: "#64748b" }}>
+                                <IconPatientDossier size={44} />
+                            </div>
+                            <h4 style={{ margin: "0 0 6px 0", color: "#0f172a", fontSize: "1.1rem" }}>Aucun patient trouvé</h4>
+                            <p style={{ margin: 0, color: "#64748b", fontSize: "0.85rem" }}>
+                                {patientSearch ? "Aucun patient ne correspond à votre recherche." : "Aucun patient n'est encore enregistré dans la base."}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="patient-table-wrapper">
+                            <table className="patient-table">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: "22%" }}>Patient</th>
+                                        <th style={{ width: "10%" }}>Statut</th>
+                                        <th style={{ width: "14%" }}>Date de naissance</th>
+                                        <th style={{ width: "18%" }}>Email</th>
+                                        <th style={{ width: "14%" }}>Adresse</th>
+                                        <th style={{ width: "6%", textAlign: "center" }}>RDV</th>
+                                        <th style={{ width: "6%", textAlign: "center" }}>Consultations</th>
+                                        <th style={{ width: "10%", textAlign: "center", minWidth: "120px" }}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredPatients.map((p) => (
+                                        <tr key={p.idUtilisateur} style={{ opacity: p.actif === false ? 0.65 : 1 }}>
+                                            <td>
+                                                <span className="patient-name-cell">
+                                                    <IconUser size={16} style={{ color: "#0284c7", flexShrink: 0 }} /> {p.nom} {p.prenom}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {p.actif !== false ? (
+                                                    <span className="badge-patient-active">
+                                                        <IconCheck size={11} /> Actif
+                                                    </span>
+                                                ) : (
+                                                    <span className="badge-patient-inactive">
+                                                        <IconClose size={11} /> Inactif
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="font-tabular" style={{ color: "#1e293b", fontWeight: 500 }}>
+                                                {formatFrenchDate(p.dateNaissance)}
+                                            </td>
+                                            <td style={{ color: "#334155", fontWeight: 500 }}>
+                                                {p.email}
+                                            </td>
+                                            <td style={{ color: "#475569" }}>
+                                                {p.adresse || "Non renseignée"}
+                                            </td>
+                                            <td style={{ textAlign: "center" }}>
+                                                <span className="patient-count-pill font-tabular">{p.totalRdv || 0}</span>
+                                            </td>
+                                            <td style={{ textAlign: "center" }}>
+                                                <span className="patient-count-pill-alt font-tabular">{p.totalConsultations || 0}</span>
+                                            </td>
+                                            <td style={{ textAlign: "center" }}>
+                                                <div className="action-icon-group">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedPatientModal(p)}
+                                                        className="action-icon-btn action-view"
+                                                        title="Voir la fiche patient"
+                                                        aria-label="Voir la fiche patient"
+                                                    >
+                                                        <IconEye size={15} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingPatientModal({
+                                                            idUtilisateur: p.idUtilisateur,
+                                                            nom: p.nom,
+                                                            prenom: p.prenom,
+                                                            email: p.email,
+                                                            dateNaissance: p.dateNaissance || "",
+                                                            adresse: p.adresse || ""
+                                                        })}
+                                                        className="action-icon-btn action-edit"
+                                                        title="Modifier le dossier patient"
+                                                        aria-label="Modifier le dossier patient"
+                                                    >
+                                                        <IconEdit size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleTogglePatientStatus(p)}
+                                                        className={`action-icon-btn ${p.actif !== false ? "action-deactivate" : "action-activate"}`}
+                                                        title={p.actif !== false ? "Désactiver le patient" : "Réactiver le patient"}
+                                                        aria-label={p.actif !== false ? "Désactiver le patient" : "Réactiver le patient"}
+                                                    >
+                                                        {p.actif !== false ? <IconTrash size={14} /> : <IconCheck size={14} />}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -806,6 +1104,246 @@ function SecretaryDashboard() {
                     </div>
                 </div>
             )}
+
+            {/* ── MODAL PATIENT : FICHE DÉTAILLÉE ── */}
+            {selectedPatientModal && (
+                <div className="modal-overlay" onClick={() => setSelectedPatientModal(null)}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Dossier Médical & Administratif : {selectedPatientModal.nom} {selectedPatientModal.prenom}</h3>
+                            <button type="button" className="btn-close-modal" onClick={() => setSelectedPatientModal(null)}>
+                                <IconClose size={16} />
+                            </button>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px" }}>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Email</span>
+                                <div style={{ fontWeight: 600, color: "#0f172a" }}>{selectedPatientModal.email}</div>
+                            </div>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Date de naissance</span>
+                                <div className="font-tabular" style={{ fontWeight: 600, color: "#0f172a" }}>{formatFrenchDate(selectedPatientModal.dateNaissance)}</div>
+                            </div>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Adresse</span>
+                                <div style={{ fontWeight: 600, color: "#0f172a" }}>{selectedPatientModal.adresse || "Non renseignée"}</div>
+                            </div>
+                            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                                <span style={{ color: "#64748b", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: 600 }}>Activité</span>
+                                <div className="font-tabular" style={{ fontWeight: 700, color: "#0f766e" }}>
+                                    {selectedPatientModal.totalRdv || 0} Rendez-vous • {selectedPatientModal.totalConsultations || 0} Consultations
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            <button
+                                type="button"
+                                className="btn-action-principal"
+                                style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+                                onClick={() => {
+                                    setSelectedPatientModal(null);
+                                    navigate("/secretary/appointments");
+                                }}
+                            >
+                                <IconAppointmentCalendar size={16} /> Voir les rendez-vous du patient
+                            </button>
+                            <button
+                                type="button"
+                                className="med-btn med-btn-secondaire"
+                                onClick={() => setSelectedPatientModal(null)}
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL PATIENT : NOUVEAU PATIENT ── */}
+            {showNewPatientModal && (
+                <div className="modal-overlay" onClick={() => setShowNewPatientModal(false)}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                                <IconPlus size={18} /> Enregistrer un nouveau patient
+                            </h3>
+                            <button type="button" className="btn-close-modal" onClick={() => setShowNewPatientModal(false)}>
+                                <IconClose size={16} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreatePatientSubmit}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                                <div className="form-group">
+                                    <label className="form-label">Nom *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Ex: Ben Ali"
+                                        value={newPatientForm.nom}
+                                        onChange={(e) => setNewPatientForm({ ...newPatientForm, nom: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Prénom *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Ex: Mohamed"
+                                        value={newPatientForm.prenom}
+                                        onChange={(e) => setNewPatientForm({ ...newPatientForm, prenom: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: "14px" }}>
+                                <label className="form-label">Adresse Email *</label>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    placeholder="Ex: patient@domaine.tn"
+                                    value={newPatientForm.email}
+                                    onChange={(e) => setNewPatientForm({ ...newPatientForm, email: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                                <div className="form-group">
+                                    <label className="form-label">Date de naissance</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        value={newPatientForm.dateNaissance}
+                                        onChange={(e) => setNewPatientForm({ ...newPatientForm, dateNaissance: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Adresse physique</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Ex: Tunis, Ariana..."
+                                        value={newPatientForm.adresse}
+                                        onChange={(e) => setNewPatientForm({ ...newPatientForm, adresse: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <p style={{ fontSize: "0.8rem", color: "rgba(255, 255, 255, 0.7)", margin: "0 0 18px", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <IconAlert size={14} /> Un compte d'accès patient sera généré automatiquement avec le mot de passe provisoire <code className="font-mono">Patient123!</code>.
+                            </p>
+
+                            <div style={{ display: "flex", gap: "10px" }}>
+                                <button type="submit" className="btn-action-principal" style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                                    <IconCheck size={16} /> Créer le dossier patient
+                                </button>
+                                <button type="button" className="med-btn med-btn-secondaire" onClick={() => setShowNewPatientModal(false)}>
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL PATIENT : MODIFIER PATIENT ── */}
+            {editingPatientModal && (
+                <div className="modal-overlay" onClick={() => setEditingPatientModal(null)}>
+                    <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                                <IconEdit size={18} /> Modifier les coordonnées du patient
+                            </h3>
+                            <button type="button" className="btn-close-modal" onClick={() => setEditingPatientModal(null)}>
+                                <IconClose size={16} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleUpdatePatientSubmit}>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                                <div className="form-group">
+                                    <label className="form-label">Nom *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={editingPatientModal.nom}
+                                        onChange={(e) => setEditingPatientModal({ ...editingPatientModal, nom: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Prénom *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={editingPatientModal.prenom}
+                                        onChange={(e) => setEditingPatientModal({ ...editingPatientModal, prenom: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: "14px" }}>
+                                <label className="form-label">Email *</label>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    value={editingPatientModal.email}
+                                    onChange={(e) => setEditingPatientModal({ ...editingPatientModal, email: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px" }}>
+                                <div className="form-group">
+                                    <label className="form-label">Date de naissance</label>
+                                    <input
+                                        type="date"
+                                        className="form-control font-tabular"
+                                        value={editingPatientModal.dateNaissance}
+                                        onChange={(e) => setEditingPatientModal({ ...editingPatientModal, dateNaissance: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Adresse</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={editingPatientModal.adresse}
+                                        onChange={(e) => setEditingPatientModal({ ...editingPatientModal, adresse: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: "flex", gap: "10px" }}>
+                                <button type="submit" className="btn-action-principal" style={{ flex: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                                    <IconCheck size={16} /> Enregistrer les modifications
+                                </button>
+                                <button type="button" className="med-btn med-btn-secondaire" onClick={() => setEditingPatientModal(null)}>
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ── MODAL PATIENT : CONFIRMATION DÉSACTIVATION / RÉACTIVATION ── */}
+            <ConfirmModal
+                isOpen={Boolean(confirmModalState)}
+                title={confirmModalState?.title || "Confirmation"}
+                message={confirmModalState?.message || ""}
+                confirmText={confirmModalState?.confirmText || "Accepter"}
+                cancelText={confirmModalState?.cancelText || "Annuler"}
+                variant={confirmModalState?.variant || "primary"}
+                onConfirm={confirmModalState?.onConfirm || (() => setConfirmModalState(null))}
+                onCancel={() => setConfirmModalState(null)}
+            />
         </DashboardLayout>
     );
 }
