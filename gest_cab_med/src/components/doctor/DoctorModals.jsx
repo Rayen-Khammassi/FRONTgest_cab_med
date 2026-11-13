@@ -351,6 +351,7 @@ function DoctorModals({
                                                 <input
                                                     type="number"
                                                     min="1"
+                                                    step="1"
                                                     value={item.quantite}
                                                     onChange={(e) => handlePrescriptionItemChange(index, "quantite", e.target.value)}
                                                     required
@@ -493,6 +494,7 @@ function DoctorModals({
                                                 <input
                                                     type="number"
                                                     min="1"
+                                                    step="1"
                                                     value={item.quantite}
                                                     onChange={(e) => handleEditPrescriptionItemChange(index, "quantite", e.target.value)}
                                                     required

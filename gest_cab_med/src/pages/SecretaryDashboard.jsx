@@ -161,9 +161,23 @@ function SecretaryDashboard() {
 
     const handleCreatePatientSubmit = async (e) => {
         e.preventDefault();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!newPatientForm.nom || !newPatientForm.prenom || !newPatientForm.email) {
             showToast("Nom, prénom et email sont obligatoires pour créer un patient.", "error");
             return;
+        }
+        if (!emailRegex.test(newPatientForm.email.trim())) {
+            showToast("Veuillez saisir une adresse email valide (ex : exemple@domaine.com).", "error");
+            return;
+        }
+        if (newPatientForm.dateNaissance) {
+            const birthDate = new Date(newPatientForm.dateNaissance);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (birthDate > today) {
+                showToast("La date de naissance ne peut pas être dans le futur.", "error");
+                return;
+            }
         }
         try {
             await createPatient(newPatientForm);
@@ -179,6 +193,24 @@ function SecretaryDashboard() {
     const handleUpdatePatientSubmit = async (e) => {
         e.preventDefault();
         if (!editingPatientModal) return;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!editingPatientModal.nom || !editingPatientModal.prenom || !editingPatientModal.email) {
+            showToast("Nom, prénom et email sont obligatoires.", "error");
+            return;
+        }
+        if (!emailRegex.test(editingPatientModal.email.trim())) {
+            showToast("Veuillez saisir une adresse email valide (ex : exemple@domaine.com).", "error");
+            return;
+        }
+        if (editingPatientModal.dateNaissance) {
+            const birthDate = new Date(editingPatientModal.dateNaissance);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (birthDate > today) {
+                showToast("La date de naissance ne peut pas être dans le futur.", "error");
+                return;
+            }
+        }
         try {
             await updatePatient(editingPatientModal.idUtilisateur, editingPatientModal);
             showToast("Dossier patient mis à jour avec succès !", "success");

@@ -100,6 +100,14 @@ export default function MedicamentPage() {
             return;
         }
 
+        if (!/\d/.test(dosage)) {
+            setNotification({
+                type: "erreur",
+                texte: "Le dosage doit contenir une valeur numérique (ex : '500 mg', '10 ml', '1 g')."
+            });
+            return;
+        }
+
         setEnregistrement(true);
         setNotification(null);
 

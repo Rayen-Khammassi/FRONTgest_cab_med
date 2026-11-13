@@ -229,9 +229,20 @@ function PatientDashboard() {
 
     const handleSaveProfile = async (e) => {
         e.preventDefault();
-        if (!profileForm.email || !profileForm.email.includes("@")) {
-            showToast("Veuillez saisir une adresse email valide.", "error");
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!profileForm.email || !emailRegex.test(profileForm.email.trim())) {
+            showToast("Veuillez saisir une adresse email valide (ex : exemple@domaine.com).", "error");
             return;
+        }
+
+        if (profileForm.dateNaissance) {
+            const birthDate = new Date(profileForm.dateNaissance);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (birthDate > today) {
+                showToast("La date de naissance ne peut pas être dans le futur.", "error");
+                return;
+            }
         }
 
         setIsSavingProfile(true);

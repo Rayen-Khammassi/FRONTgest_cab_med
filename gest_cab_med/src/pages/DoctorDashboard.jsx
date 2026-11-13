@@ -439,6 +439,10 @@ function DoctorDashboard() {
                         showToast("Veuillez saisir le nom et le dosage du nouveau médicament à enregistrer.", "error");
                         return;
                     }
+                    if (!/\d/.test(it.newDosage)) {
+                        showToast("Le dosage doit contenir une valeur numérique (ex : 500 mg, 10 ml, 1 g).", "error");
+                        return;
+                    }
                     const createdMed = await medicamentApi.create({
                         nom: it.newNom.trim(),
                         dosage: it.newDosage.trim()
@@ -449,13 +453,19 @@ function DoctorDashboard() {
                     }
                 }
 
+                const qte = parseInt(it.quantite, 10);
+                if (isNaN(qte) || qte <= 0) {
+                    showToast("La quantité de chaque médicament doit être un nombre entier positif (au moins 1).", "error");
+                    return;
+                }
+
                 if (medId) {
                     processedItems.push({
-                        idMedicament: parseInt(medId),
+                        idMedicament: parseInt(medId, 10),
                         posologie: it.posologie || "1 cp",
                         frequence: it.frequence || "Par jour",
                         duree: it.duree || "7 jours",
-                        quantite: parseInt(it.quantite) || 1
+                        quantite: qte
                     });
                 }
             }
@@ -536,13 +546,21 @@ function DoctorDashboard() {
         e.preventDefault();
         if (!editingPrescriptionModal) return;
 
+        for (const it of editingPrescriptionModal.items) {
+            const qte = parseInt(it.quantite, 10);
+            if (isNaN(qte) || qte <= 0) {
+                showToast("La quantité de chaque médicament doit être un nombre entier positif (au moins 1).", "error");
+                return;
+            }
+        }
+
         const processedItems = editingPrescriptionModal.items
             .map((it) => ({
-                idMedicament: parseInt(it.idMedicament),
+                idMedicament: parseInt(it.idMedicament, 10),
                 posologie: it.posologie || "1 cp",
                 frequence: it.frequence || "Par jour",
                 duree: it.duree || "7 jours",
-                quantite: parseInt(it.quantite) || 1
+                quantite: parseInt(it.quantite, 10) || 1
             }))
             .filter((it) => !isNaN(it.idMedicament) && it.idMedicament > 0);
 

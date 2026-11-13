@@ -68,6 +68,32 @@ function Login() {
                 navigate(destination, { replace: true });
 
             } else {
+                // Contrôle de saisie email
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!email || !emailRegex.test(email.trim())) {
+                    setFeedback({
+                        type: "error",
+                        message: "Veuillez saisir une adresse email valide (ex : exemple@domaine.com).",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Contrôle de date de naissance (pas dans le futur)
+                if (dateNaissance) {
+                    const selectedDate = new Date(dateNaissance);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selectedDate > today) {
+                        setFeedback({
+                            type: "error",
+                            message: "La date de naissance ne peut pas être dans le futur.",
+                        });
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+
                 const apiBase = (
                     import.meta.env.VITE_MAIN_API_URL || "http://localhost:8081"
                 ).replace(/\/$/, "");
