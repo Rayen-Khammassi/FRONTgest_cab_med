@@ -68,6 +68,15 @@ function Login() {
                 navigate(destination, { replace: true });
 
             } else {
+                if (!nom?.trim() || !prenom?.trim()) {
+                    setFeedback({
+                        type: "error",
+                        message: "Le nom et le prénom sont obligatoires.",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Contrôle de saisie email
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!email || !emailRegex.test(email.trim())) {
@@ -79,19 +88,55 @@ function Login() {
                     return;
                 }
 
+                // Contrôle date de naissance obligatoire
+                if (!dateNaissance) {
+                    setFeedback({
+                        type: "error",
+                        message: "La date de naissance est obligatoire.",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
                 // Contrôle de date de naissance (pas dans le futur)
-                if (dateNaissance) {
-                    const selectedDate = new Date(dateNaissance);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (selectedDate > today) {
-                        setFeedback({
-                            type: "error",
-                            message: "La date de naissance ne peut pas être dans le futur.",
-                        });
-                        setIsLoading(false);
-                        return;
-                    }
+                const selectedDate = new Date(dateNaissance);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (selectedDate > today) {
+                    setFeedback({
+                        type: "error",
+                        message: "La date de naissance ne peut pas être dans le futur.",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Contrôle adresse obligatoire
+                if (!adresse || !adresse.trim()) {
+                    setFeedback({
+                        type: "error",
+                        message: "L'adresse est obligatoire.",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                if (!login?.trim() || !password) {
+                    setFeedback({
+                        type: "error",
+                        message: "L'identifiant et le mot de passe sont obligatoires.",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                if (password.length < 8) {
+                    setFeedback({
+                        type: "error",
+                        message: "Le mot de passe doit comporter au moins 8 caractères.",
+                    });
+                    setIsLoading(false);
+                    return;
                 }
 
                 const apiBase = (
@@ -242,7 +287,7 @@ function Login() {
                             <>
                                 <div className="input-row">
                                     <div className="field-group">
-                                        <label htmlFor="nom">Nom</label>
+                                        <label htmlFor="nom">Nom *</label>
                                         <input
                                             id="nom"
                                             type="text"
@@ -254,7 +299,7 @@ function Login() {
                                     </div>
 
                                     <div className="field-group">
-                                        <label htmlFor="prenom">Prénom</label>
+                                        <label htmlFor="prenom">Prénom *</label>
                                         <input
                                             id="prenom"
                                             type="text"
@@ -267,7 +312,7 @@ function Login() {
                                 </div>
 
                                 <div className="field-group">
-                                    <label htmlFor="email">Email</label>
+                                    <label htmlFor="email">Email *</label>
                                     <input
                                         id="email"
                                         type="email"
@@ -280,23 +325,25 @@ function Login() {
 
                                 <div className="input-row">
                                     <div className="field-group">
-                                        <label htmlFor="dateNaissance">Date de naissance</label>
+                                        <label htmlFor="dateNaissance">Date de naissance *</label>
                                         <input
                                             id="dateNaissance"
                                             type="date"
                                             value={dateNaissance}
                                             onChange={(e) => setDateNaissance(e.target.value)}
+                                            required
                                         />
                                     </div>
 
                                     <div className="field-group">
-                                        <label htmlFor="adresse">Adresse</label>
+                                        <label htmlFor="adresse">Adresse *</label>
                                         <input
                                             id="adresse"
                                             type="text"
                                             value={adresse}
                                             onChange={(e) => setAdresse(e.target.value)}
                                             placeholder="Ex: Tunis, Ariana"
+                                            required
                                         />
                                     </div>
                                 </div>

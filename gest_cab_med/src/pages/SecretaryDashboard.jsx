@@ -162,22 +162,28 @@ function SecretaryDashboard() {
     const handleCreatePatientSubmit = async (e) => {
         e.preventDefault();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!newPatientForm.nom || !newPatientForm.prenom || !newPatientForm.email) {
-            showToast("Nom, prénom et email sont obligatoires pour créer un patient.", "error");
+        if (!newPatientForm.nom?.trim() || !newPatientForm.prenom?.trim()) {
+            showToast("Le nom et le prénom sont obligatoires pour créer un patient.", "error");
             return;
         }
-        if (!emailRegex.test(newPatientForm.email.trim())) {
+        if (!newPatientForm.email || !emailRegex.test(newPatientForm.email.trim())) {
             showToast("Veuillez saisir une adresse email valide (ex : exemple@domaine.com).", "error");
             return;
         }
-        if (newPatientForm.dateNaissance) {
-            const birthDate = new Date(newPatientForm.dateNaissance);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (birthDate > today) {
-                showToast("La date de naissance ne peut pas être dans le futur.", "error");
-                return;
-            }
+        if (!newPatientForm.dateNaissance) {
+            showToast("La date de naissance est obligatoire.", "error");
+            return;
+        }
+        const birthDate = new Date(newPatientForm.dateNaissance);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (birthDate > today) {
+            showToast("La date de naissance ne peut pas être dans le futur.", "error");
+            return;
+        }
+        if (!newPatientForm.adresse || !newPatientForm.adresse.trim()) {
+            showToast("L'adresse est obligatoire.", "error");
+            return;
         }
         try {
             await createPatient(newPatientForm);
@@ -194,22 +200,28 @@ function SecretaryDashboard() {
         e.preventDefault();
         if (!editingPatientModal) return;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!editingPatientModal.nom || !editingPatientModal.prenom || !editingPatientModal.email) {
-            showToast("Nom, prénom et email sont obligatoires.", "error");
+        if (!editingPatientModal.nom?.trim() || !editingPatientModal.prenom?.trim()) {
+            showToast("Le nom et le prénom sont obligatoires.", "error");
             return;
         }
-        if (!emailRegex.test(editingPatientModal.email.trim())) {
+        if (!editingPatientModal.email || !emailRegex.test(editingPatientModal.email.trim())) {
             showToast("Veuillez saisir une adresse email valide (ex : exemple@domaine.com).", "error");
             return;
         }
-        if (editingPatientModal.dateNaissance) {
-            const birthDate = new Date(editingPatientModal.dateNaissance);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (birthDate > today) {
-                showToast("La date de naissance ne peut pas être dans le futur.", "error");
-                return;
-            }
+        if (!editingPatientModal.dateNaissance) {
+            showToast("La date de naissance est obligatoire.", "error");
+            return;
+        }
+        const birthDate = new Date(editingPatientModal.dateNaissance);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (birthDate > today) {
+            showToast("La date de naissance ne peut pas être dans le futur.", "error");
+            return;
+        }
+        if (!editingPatientModal.adresse || !editingPatientModal.adresse.trim()) {
+            showToast("L'adresse est obligatoire.", "error");
+            return;
         }
         try {
             await updatePatient(editingPatientModal.idUtilisateur, editingPatientModal);
@@ -1246,22 +1258,24 @@ function SecretaryDashboard() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
                                 <div className="form-group">
-                                    <label className="form-label">Date de naissance</label>
+                                    <label className="form-label">Date de naissance *</label>
                                     <input
                                         type="date"
                                         className="form-control"
                                         value={newPatientForm.dateNaissance}
                                         onChange={(e) => setNewPatientForm({ ...newPatientForm, dateNaissance: e.target.value })}
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Adresse physique</label>
+                                    <label className="form-label">Adresse physique *</label>
                                     <input
                                         type="text"
                                         className="form-control"
                                         placeholder="Ex: Tunis, Ariana..."
                                         value={newPatientForm.adresse}
                                         onChange={(e) => setNewPatientForm({ ...newPatientForm, adresse: e.target.value })}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -1333,21 +1347,23 @@ function SecretaryDashboard() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px" }}>
                                 <div className="form-group">
-                                    <label className="form-label">Date de naissance</label>
+                                    <label className="form-label">Date de naissance *</label>
                                     <input
                                         type="date"
                                         className="form-control font-tabular"
                                         value={editingPatientModal.dateNaissance}
                                         onChange={(e) => setEditingPatientModal({ ...editingPatientModal, dateNaissance: e.target.value })}
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Adresse</label>
+                                    <label className="form-label">Adresse *</label>
                                     <input
                                         type="text"
                                         className="form-control"
                                         value={editingPatientModal.adresse}
                                         onChange={(e) => setEditingPatientModal({ ...editingPatientModal, adresse: e.target.value })}
+                                        required
                                     />
                                 </div>
                             </div>

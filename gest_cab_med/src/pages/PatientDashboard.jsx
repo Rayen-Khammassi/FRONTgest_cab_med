@@ -229,30 +229,43 @@ function PatientDashboard() {
 
     const handleSaveProfile = async (e) => {
         e.preventDefault();
+        if (!profileForm.nom?.trim() || !profileForm.prenom?.trim()) {
+            showToast("Le nom et le prénom sont obligatoires.", "error");
+            return;
+        }
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!profileForm.email || !emailRegex.test(profileForm.email.trim())) {
             showToast("Veuillez saisir une adresse email valide (ex : exemple@domaine.com).", "error");
             return;
         }
 
-        if (profileForm.dateNaissance) {
-            const birthDate = new Date(profileForm.dateNaissance);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (birthDate > today) {
-                showToast("La date de naissance ne peut pas être dans le futur.", "error");
-                return;
-            }
+        if (!profileForm.dateNaissance) {
+            showToast("La date de naissance est obligatoire.", "error");
+            return;
+        }
+
+        const birthDate = new Date(profileForm.dateNaissance);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (birthDate > today) {
+            showToast("La date de naissance ne peut pas être dans le futur.", "error");
+            return;
+        }
+
+        if (!profileForm.adresse || !profileForm.adresse.trim()) {
+            showToast("L'adresse de résidence est obligatoire.", "error");
+            return;
         }
 
         setIsSavingProfile(true);
         try {
             await updatePatient(user.idUtilisateur, {
-                nom: profileForm.nom,
-                prenom: profileForm.prenom,
+                nom: profileForm.nom.trim(),
+                prenom: profileForm.prenom.trim(),
                 email: profileForm.email.trim(),
-                dateNaissance: profileForm.dateNaissance || null,
-                adresse: profileForm.adresse ? profileForm.adresse.trim() : null
+                dateNaissance: profileForm.dateNaissance.trim(),
+                adresse: profileForm.adresse.trim()
             });
 
             // Update stored user profile
@@ -928,23 +941,25 @@ function PatientDashboard() {
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
                                 <div className="form-group">
-                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Date de naissance</label>
+                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Date de naissance *</label>
                                     <input
                                         type="date"
                                         className="form-control font-tabular"
                                         value={profileForm.dateNaissance}
                                         onChange={(e) => setProfileForm({ ...profileForm, dateNaissance: e.target.value })}
+                                        required
                                         style={{ background: "#f8fafc" }}
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Adresse de résidence</label>
+                                    <label className="form-label" style={{ fontWeight: 600, color: "#334155" }}>Adresse de résidence *</label>
                                     <input
                                         type="text"
                                         className="form-control"
                                         placeholder="Ex: Tunis, Ariana, La Marsa..."
                                         value={profileForm.adresse}
                                         onChange={(e) => setProfileForm({ ...profileForm, adresse: e.target.value })}
+                                        required
                                         style={{ background: "#ffffff" }}
                                     />
                                 </div>
